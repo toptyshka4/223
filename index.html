@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Контроль вагонов — GitHub Pages</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./wagon_info.css">
+  <style>
+    body {margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f4f6f8;color:#111;}
+    header {background:#0b5cab;color:#fff;padding:16px;text-align:center;font-weight:600;font-size:20px;}
+    main {padding:20px;}
+    .grid {display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;}
+    .cell {background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.1);padding:10px;text-align:center;position:relative;}
+    .num {font-weight:700;color:#333;margin-bottom:8px;}
+    .cell img {max-width:100%;height:auto;display:block;margin:0 auto;}
+    footer {text-align:center;padding:20px;font-size:13px;color:#666;}
+  </style>
+</head>
+<body>
+  <header>Контроль вагонов</header>
+  <main>
+    <p style="margin-bottom:16px;">
+      Демо: наведите курсор на вагон — появится подсказка из базы <code>./data/wagons_2000.json</code>.
+      ★ — Постройка ≥ 2018; «Х» — переход Хюбнер.
+    </p>
+    <div class="grid">
+      <!-- Эти номера точно есть в базе -->
+      <div class="cell wagon-root" data-number="12345678">
+        <div class="num">№ 12345678</div>
+        <img class="wagon-img" src="./assets/wagon_one.png" alt="Вагон" />
+      </div>
+      <div class="cell wagon-root" data-number="87654321">
+        <div class="num">№ 87654321</div>
+        <img class="wagon-img" src="./assets/wagon_two.png" alt="Вагон" />
+      </div>
+
+      <!-- Пример отсутствующего вагона -->
+      <div class="cell wagon-root" data-number="11112222">
+        <div class="num">№ 11112222</div>
+        <img class="wagon-img" src="./assets/wagon_one.png" alt="Вагон" />
+      </div>
+    </div>
+  </main>
+  <footer>© 2025 Контроль вагонов | GitHub Pages версия</footer>
+  <script src="./wagon_info.js" defer></script>
+</body>
+</html>
