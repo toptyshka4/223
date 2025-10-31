@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Система управления вагонным парком (safe)</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root{ --slot-w:108px; --slot-h:86px; --img-single:30px; --img-double:41px;
+           --brand:#2b4b6f; --border:#e5e7eb; --bg:#f5f7fb; --blue:#2563eb; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; background:var(--bg); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#111827; }
+    .navbar{ background:var(--brand); color:#fff; }
+    .container{ max-width:1600px; margin:0 auto; padding:12px 16px; }
+    .row{ display:flex; align-items:center; gap:8px; }
+    .ml-auto{ margin-left:auto; }
+    .btn{ border-radius:10px; padding:6px 10px; border:1px solid var(--border); background:#e5e7eb; cursor:pointer; }
+    .btn.primary{ background:var(--blue); color:#fff; border-color:transparent; }
+    .badge{ background:#1f2937; color:#fff; padding:6px 10px; border-radius:10px; font-size:12px; }
+    .badge.gray{ background:#6b7280; } .badge.blue{ background:#2563eb; }
+    input, select, textarea{ border:1px solid var(--border); border-radius:10px; padding:6px 10px; font:inherit; }
+    h2{ margin:8px 0; color:var(--brand); font-weight:700; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+    @media (max-width:1024px){ .grid{ grid-template-columns:1fr; } }
+    .panel{ background:#fff; border:1px solid var(--border); border-radius:12px; margin-bottom:12px; }
+    .panel .head{ padding:8px 12px; display:flex; align-items:center; justify-content:space-between; background:#f9fafb; border-top-left-radius:12px; border-top-right-radius:12px; }
+    .panel .body{ padding:12px; }
+    .track-line{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
+    .slot{ width:var(--slot-w); height:var(--slot-h); flex:0 0 auto; border:2px dashed #cfd8e3; border-radius:10px; background:#f9fbff; display:flex; align-items:center; justify-content:center; }
+    .slot.filled{ border-style:solid; background:#fff; }
+    .wagon{ width:var(--slot-w); height:var(--slot-h); border:1px solid #cfd8e3; border-radius:10px; background:#fff; padding:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .wagon.reserve{ outline:2px solid rgba(34,197,94,.7); background:#ecfdf5; }
+    .wagon.defect{ outline:2px solid rgba(239,68,68,.7); background:#fef2f2; }
+    .num{ font-weight:800; font-size:14px; text-align:center; line-height:1.05; margin-bottom:2px; }
+    .img.single{ height:var(--img-single); } .img.double{ height:var(--img-double); }
+    .section{ border-left:6px solid transparent; padding-left:8px; margin-bottom:16px; }
+    .sec-red{ border-color:#ef4444; } .sec-linear{ border-color:#3b82f6; } .sec-upper{ border-color:#10b981; } .sec-tor{ border-color:#8b5cf6; }
+    .backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; z-index:999; }
+    .hidden{ display:none; }
+    .modal{ background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.12); }
+    .content{ padding:12px; }
+    .ctx{ position:fixed; width:360px; z-index:1000; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.12); }
+    .highlight{ outline:3px solid #f59e0b; box-shadow:0 0 0 4px rgba(245,158,11,.25); }
+    .errorbar{ display:none; background:#fee2e2; color:#991b1b; padding:8px 12px; }
+    .errorbar.show{ display:block; }
+  </style>
+  <link rel="stylesheet" href="assets/css/parks.css">
+  <style>
+.nav-counter {
+  background:#6b7280;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  padding:6px 10px;
+  font-weight:600;
+  box-shadow:0 1px 3px rgba(0,0,0,.05);
+  margin-left:8px;
+}
+</style>
+<style>
+/* Стили для центральной панели статистики */
+.cp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.cp-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.cp-card.cp-clickable {
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f8fafc;
+}
+.cp-card.cp-clickable:hover {
+  background: #e2e8f0;
+  transform: translateY(-2px);
+}
+.cp-card b {
+  font-size: 1.5em;
+  color: #1e40af;
+  display: block;
+  margin-top: 4px;
+}
+.cp-list {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.cp-list.hidden {
+  display: none;
+}
+.cp-list div {
+  padding: 6px 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.cp-list div:last-child {
+  border-bottom: none;
+}
+</style>
+</head>
+<body>
+<div id="central-panel" style="max-width:1200px;margin:12px auto;"></div>
+
+  <div class="navbar">
+  <div class="container row">
+    <div class="row" style="font-weight:600; font-size:16px;">
+      <span style="display:inline-block;width:20px;height:20px;background:rgba(255,255,255,.2);border-radius:50%;margin-right:6px"></span>
+      Система управления вагонным парком (safe)
+    </div>
+    <div class="ml-auto row">
+      <input id="searchInput" placeholder="Поиск по номеру"/>
+      <button id="searchBtn" class="btn">Найти</button>
+      <div class="badge blue" id="badge-occupancy">Занято: 0%</div>
+      <div class="badge gray" id="badge-single">Одноэтажные: 0</div>
+      <div class="badge gray" id="badge-double">Двухэтажные: 0</div>
+      <div class="nav-counter">Резерв: <span id="count-reserve">0</span></div>
+      <div class="nav-counter" style="margin-left:12px">Брак: <span id="count-brak">0</span></div>
+      <button id="btnAddTrain" class="btn">Добавить поезд</button>
+      <button id="btnInventory" class="btn">Опись парка</button>
+    </div>
+  </div>
+</div>
+  <div id="central-panel" style="max-width:1200px; margin:12px auto; padding:0 16px;"></div> что файл открыт из локального диска и включён JavaScript.</div>
+
+  <div class="container" style="padding:16px;">
+    <div class="grid">
+      <div class="left">
+<div class='section sec-red'><h2>РЭД</h2><div id='wrap-red'>
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 61 — <span data-trainname="61" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="61">Изменить</button></div>
+        <div class="muted">Свободно: 20 / 20</div>
+        <button class="btn" data-clear="61">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="РЭД" data-track="61"><div class="slot" data-track="61" data-index="0" data-block="РЭД"></div><div class="slot" data-track="61" data-index="1" data-block="РЭД"></div><div class="slot" data-track="61" data-index="2" data-block="РЭД"></div><div class="slot" data-track="61" data-index="3" data-block="РЭД"></div><div class="slot" data-track="61" data-index="4" data-block="РЭД"></div><div class="slot" data-track="61" data-index="5" data-block="РЭД"></div><div class="slot" data-track="61" data-index="6" data-block="РЭД"></div><div class="slot" data-track="61" data-index="7" data-block="РЭД"></div><div class="slot" data-track="61" data-index="8" data-block="РЭД"></div><div class="slot" data-track="61" data-index="9" data-block="РЭД"></div><div class="slot" data-track="61" data-index="10" data-block="РЭД"></div><div class="slot" data-track="61" data-index="11" data-block="РЭД"></div><div class="slot" data-track="61" data-index="12" data-block="РЭД"></div><div class="slot" data-track="61" data-index="13" data-block="РЭД"></div><div class="slot" data-track="61" data-index="14" data-block="РЭД"></div><div class="slot" data-track="61" data-index="15" data-block="РЭД"></div><div class="slot" data-track="61" data-index="16" data-block="РЭД"></div><div class="slot" data-track="61" data-index="17" data-block="РЭД"></div><div class="slot" data-track="61" data-index="18" data-block="РЭД"></div><div class="slot" data-track="61" data-index="19" data-block="РЭД"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 62 — <span data-trainname="62" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="62">Изменить</button></div>
+        <div class="muted">Свободно: 20 / 20</div>
+        <button class="btn" data-clear="62">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="РЭД" data-track="62"><div class="slot" data-track="62" data-index="0" data-block="РЭД"></div><div class="slot" data-track="62" data-index="1" data-block="РЭД"></div><div class="slot" data-track="62" data-index="2" data-block="РЭД"></div><div class="slot" data-track="62" data-index="3" data-block="РЭД"></div><div class="slot" data-track="62" data-index="4" data-block="РЭД"></div><div class="slot" data-track="62" data-index="5" data-block="РЭД"></div><div class="slot" data-track="62" data-index="6" data-block="РЭД"></div><div class="slot" data-track="62" data-index="7" data-block="РЭД"></div><div class="slot" data-track="62" data-index="8" data-block="РЭД"></div><div class="slot" data-track="62" data-index="9" data-block="РЭД"></div><div class="slot" data-track="62" data-index="10" data-block="РЭД"></div><div class="slot" data-track="62" data-index="11" data-block="РЭД"></div><div class="slot" data-track="62" data-index="12" data-block="РЭД"></div><div class="slot" data-track="62" data-index="13" data-block="РЭД"></div><div class="slot" data-track="62" data-index="14" data-block="РЭД"></div><div class="slot" data-track="62" data-index="15" data-block="РЭД"></div><div class="slot" data-track="62" data-index="16" data-block="РЭД"></div><div class="slot" data-track="62" data-index="17" data-block="РЭД"></div><div class="slot" data-track="62" data-index="18" data-block="РЭД"></div><div class="slot" data-track="62" data-index="19" data-block="РЭД"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 63 — <span data-trainname="63" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="63">Изменить</button></div>
+        <div class="muted">Свободно: 20 / 20</div>
+        <button class="btn" data-clear="63">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="РЭД" data-track="63"><div class="slot" data-track="63" data-index="0" data-block="РЭД"></div><div class="slot" data-track="63" data-index="1" data-block="РЭД"></div><div class="slot" data-track="63" data-index="2" data-block="РЭД"></div><div class="slot" data-track="63" data-index="3" data-block="РЭД"></div><div class="slot" data-track="63" data-index="4" data-block="РЭД"></div><div class="slot" data-track="63" data-index="5" data-block="РЭД"></div><div class="slot" data-track="63" data-index="6" data-block="РЭД"></div><div class="slot" data-track="63" data-index="7" data-block="РЭД"></div><div class="slot" data-track="63" data-index="8" data-block="РЭД"></div><div class="slot" data-track="63" data-index="9" data-block="РЭД"></div><div class="slot" data-track="63" data-index="10" data-block="РЭД"></div><div class="slot" data-track="63" data-index="11" data-block="РЭД"></div><div class="slot" data-track="63" data-index="12" data-block="РЭД"></div><div class="slot" data-track="63" data-index="13" data-block="РЭД"></div><div class="slot" data-track="63" data-index="14" data-block="РЭД"></div><div class="slot" data-track="63" data-index="15" data-block="РЭД"></div><div class="slot" data-track="63" data-index="16" data-block="РЭД"></div><div class="slot" data-track="63" data-index="17" data-block="РЭД"></div><div class="slot" data-track="63" data-index="18" data-block="РЭД"></div><div class="slot" data-track="63" data-index="19" data-block="РЭД"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 64 — <span data-trainname="64" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="64">Изменить</button></div>
+        <div class="muted">Свободно: 20 / 20</div>
+        <button class="btn" data-clear="64">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="РЭД" data-track="64"><div class="slot" data-track="64" data-index="0" data-block="РЭД"></div><div class="slot" data-track="64" data-index="1" data-block="РЭД"></div><div class="slot" data-track="64" data-index="2" data-block="РЭД"></div><div class="slot" data-track="64" data-index="3" data-block="РЭД"></div><div class="slot" data-track="64" data-index="4" data-block="РЭД"></div><div class="slot" data-track="64" data-index="5" data-block="РЭД"></div><div class="slot" data-track="64" data-index="6" data-block="РЭД"></div><div class="slot" data-track="64" data-index="7" data-block="РЭД"></div><div class="slot" data-track="64" data-index="8" data-block="РЭД"></div><div class="slot" data-track="64" data-index="9" data-block="РЭД"></div><div class="slot" data-track="64" data-index="10" data-block="РЭД"></div><div class="slot" data-track="64" data-index="11" data-block="РЭД"></div><div class="slot" data-track="64" data-index="12" data-block="РЭД"></div><div class="slot" data-track="64" data-index="13" data-block="РЭД"></div><div class="slot" data-track="64" data-index="14" data-block="РЭД"></div><div class="slot" data-track="64" data-index="15" data-block="РЭД"></div><div class="slot" data-track="64" data-index="16" data-block="РЭД"></div><div class="slot" data-track="64" data-index="17" data-block="РЭД"></div><div class="slot" data-track="64" data-index="18" data-block="РЭД"></div><div class="slot" data-track="64" data-index="19" data-block="РЭД"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 65 — <span data-trainname="65" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="65">Изменить</button></div>
+        <div class="muted">Свободно: 20 / 20</div>
+        <button class="btn" data-clear="65">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="РЭД" data-track="65"><div class="slot" data-track="65" data-index="0" data-block="РЭД"></div><div class="slot" data-track="65" data-index="1" data-block="РЭД"></div><div class="slot" data-track="65" data-index="2" data-block="РЭД"></div><div class="slot" data-track="65" data-index="3" data-block="РЭД"></div><div class="slot" data-track="65" data-index="4" data-block="РЭД"></div><div class="slot" data-track="65" data-index="5" data-block="РЭД"></div><div class="slot" data-track="65" data-index="6" data-block="РЭД"></div><div class="slot" data-track="65" data-index="7" data-block="РЭД"></div><div class="slot" data-track="65" data-index="8" data-block="РЭД"></div><div class="slot" data-track="65" data-index="9" data-block="РЭД"></div><div class="slot" data-track="65" data-index="10" data-block="РЭД"></div><div class="slot" data-track="65" data-index="11" data-block="РЭД"></div><div class="slot" data-track="65" data-index="12" data-block="РЭД"></div><div class="slot" data-track="65" data-index="13" data-block="РЭД"></div><div class="slot" data-track="65" data-index="14" data-block="РЭД"></div><div class="slot" data-track="65" data-index="15" data-block="РЭД"></div><div class="slot" data-track="65" data-index="16" data-block="РЭД"></div><div class="slot" data-track="65" data-index="17" data-block="РЭД"></div><div class="slot" data-track="65" data-index="18" data-block="РЭД"></div><div class="slot" data-track="65" data-index="19" data-block="РЭД"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 66 — <span data-trainname="66" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="66">Изменить</button></div>
+        <div class="muted">Свободно: 20 / 20</div>
+        <button class="btn" data-clear="66">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="РЭД" data-track="66"><div class="slot" data-track="66" data-index="0" data-block="РЭД"></div><div class="slot" data-track="66" data-index="1" data-block="РЭД"></div><div class="slot" data-track="66" data-index="2" data-block="РЭД"></div><div class="slot" data-track="66" data-index="3" data-block="РЭД"></div><div class="slot" data-track="66" data-index="4" data-block="РЭД"></div><div class="slot" data-track="66" data-index="5" data-block="РЭД"></div><div class="slot" data-track="66" data-index="6" data-block="РЭД"></div><div class="slot" data-track="66" data-index="7" data-block="РЭД"></div><div class="slot" data-track="66" data-index="8" data-block="РЭД"></div><div class="slot" data-track="66" data-index="9" data-block="РЭД"></div><div class="slot" data-track="66" data-index="10" data-block="РЭД"></div><div class="slot" data-track="66" data-index="11" data-block="РЭД"></div><div class="slot" data-track="66" data-index="12" data-block="РЭД"></div><div class="slot" data-track="66" data-index="13" data-block="РЭД"></div><div class="slot" data-track="66" data-index="14" data-block="РЭД"></div><div class="slot" data-track="66" data-index="15" data-block="РЭД"></div><div class="slot" data-track="66" data-index="16" data-block="РЭД"></div><div class="slot" data-track="66" data-index="17" data-block="РЭД"></div><div class="slot" data-track="66" data-index="18" data-block="РЭД"></div><div class="slot" data-track="66" data-index="19" data-block="РЭД"></div></div>
+      </div>
+    </div>
+</div></div><div class='section sec-tor'><h2>Парк ТОР и ЕТР</h2><div id='wrap-tor'>
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 8д — <span data-trainname="8д" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="8д">Изменить</button></div>
+        <div class="muted">Свободно: 4 / 4</div>
+        <button class="btn" data-clear="8д">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Парк ТОР и ЕТР" data-track="8д"><div class="slot" data-track="8д" data-index="0" data-block="Парк ТОР и ЕТР"></div><div class="slot" data-track="8д" data-index="1" data-block="Парк ТОР и ЕТР"></div><div class="slot" data-track="8д" data-index="2" data-block="Парк ТОР и ЕТР"></div><div class="slot" data-track="8д" data-index="3" data-block="Парк ТОР и ЕТР"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 9д — <span data-trainname="9д" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="9д">Изменить</button></div>
+        <div class="muted">Свободно: 4 / 4</div>
+        <button class="btn" data-clear="9д">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Парк ТОР и ЕТР" data-track="9д"><div class="slot" data-track="9д" data-index="0" data-block="Парк ТОР и ЕТР"></div><div class="slot" data-track="9д" data-index="1" data-block="Парк ТОР и ЕТР"></div><div class="slot" data-track="9д" data-index="2" data-block="Парк ТОР и ЕТР"></div><div class="slot" data-track="9д" data-index="3" data-block="Парк ТОР и ЕТР"></div></div>
+      </div>
+    </div>
+</div></div>
+      </div>
+      <div class="right">
+<div class='section sec-linear'><h2>Линейный парк</h2><div id='wrap-linear'>
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 40 — <span data-trainname="40" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="40">Изменить</button></div>
+        <div class="muted">Свободно: 20 / 20</div>
+        <button class="btn" data-clear="40">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Линейный парк" data-track="40"><div class="slot" data-track="40" data-index="0" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="1" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="2" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="3" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="4" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="5" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="6" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="7" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="8" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="9" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="10" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="11" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="12" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="13" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="14" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="15" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="16" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="17" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="18" data-block="Линейный парк"></div><div class="slot" data-track="40" data-index="19" data-block="Линейный парк"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 41 — <span data-trainname="41" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="41">Изменить</button></div>
+        <div class="muted">Свободно: 13 / 13</div>
+        <button class="btn" data-clear="41">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Линейный парк" data-track="41"><div class="slot" data-track="41" data-index="0" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="1" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="2" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="3" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="4" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="5" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="6" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="7" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="8" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="9" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="10" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="11" data-block="Линейный парк"></div><div class="slot" data-track="41" data-index="12" data-block="Линейный парк"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 42 — <span data-trainname="42" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="42">Изменить</button></div>
+        <div class="muted">Свободно: 14 / 14</div>
+        <button class="btn" data-clear="42">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Линейный парк" data-track="42"><div class="slot" data-track="42" data-index="0" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="1" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="2" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="3" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="4" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="5" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="6" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="7" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="8" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="9" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="10" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="11" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="12" data-block="Линейный парк"></div><div class="slot" data-track="42" data-index="13" data-block="Линейный парк"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 43 — <span data-trainname="43" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="43">Изменить</button></div>
+        <div class="muted">Свободно: 20 / 20</div>
+        <button class="btn" data-clear="43">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Линейный парк" data-track="43"><div class="slot" data-track="43" data-index="0" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="1" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="2" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="3" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="4" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="5" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="6" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="7" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="8" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="9" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="10" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="11" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="12" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="13" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="14" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="15" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="16" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="17" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="18" data-block="Линейный парк"></div><div class="slot" data-track="43" data-index="19" data-block="Линейный парк"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 44 — <span data-trainname="44" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="44">Изменить</button></div>
+        <div class="muted">Свободно: 18 / 18</div>
+        <button class="btn" data-clear="44">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Линейный парк" data-track="44"><div class="slot" data-track="44" data-index="0" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="1" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="2" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="3" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="4" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="5" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="6" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="7" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="8" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="9" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="10" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="11" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="12" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="13" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="14" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="15" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="16" data-block="Линейный парк"></div><div class="slot" data-track="44" data-index="17" data-block="Линейный парк"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 45 — <span data-trainname="45" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="45">Изменить</button></div>
+        <div class="muted">Свободно: 16 / 16</div>
+        <button class="btn" data-clear="45">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Линейный парк" data-track="45"><div class="slot" data-track="45" data-index="0" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="1" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="2" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="3" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="4" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="5" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="6" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="7" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="8" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="9" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="10" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="11" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="12" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="13" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="14" data-block="Линейный парк"></div><div class="slot" data-track="45" data-index="15" data-block="Линейный парк"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 47 — <span data-trainname="47" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="47">Изменить</button></div>
+        <div class="muted">Свободно: 14 / 14</div>
+        <button class="btn" data-clear="47">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Линейный парк" data-track="47"><div class="slot" data-track="47" data-index="0" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="1" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="2" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="3" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="4" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="5" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="6" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="7" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="8" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="9" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="10" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="11" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="12" data-block="Линейный парк"></div><div class="slot" data-track="47" data-index="13" data-block="Линейный парк"></div></div>
+      </div>
+    </div>
+</div></div><div class='section sec-upper'><h2>Верхний парк</h2><div id='wrap-upper'>
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 23 — <span data-trainname="23" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="23">Изменить</button></div>
+        <div class="muted">Свободно: 20 / 20</div>
+        <button class="btn" data-clear="23">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Верхний парк" data-track="23"><div class="slot" data-track="23" data-index="0" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="1" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="2" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="3" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="4" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="5" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="6" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="7" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="8" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="9" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="10" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="11" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="12" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="13" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="14" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="15" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="16" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="17" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="18" data-block="Верхний парк"></div><div class="slot" data-track="23" data-index="19" data-block="Верхний парк"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 24 — <span data-trainname="24" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="24">Изменить</button></div>
+        <div class="muted">Свободно: 16 / 16</div>
+        <button class="btn" data-clear="24">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Верхний парк" data-track="24"><div class="slot" data-track="24" data-index="0" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="1" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="2" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="3" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="4" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="5" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="6" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="7" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="8" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="9" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="10" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="11" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="12" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="13" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="14" data-block="Верхний парк"></div><div class="slot" data-track="24" data-index="15" data-block="Верхний парк"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 25 — <span data-trainname="25" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="25">Изменить</button></div>
+        <div class="muted">Свободно: 16 / 16</div>
+        <button class="btn" data-clear="25">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Верхний парк" data-track="25"><div class="slot" data-track="25" data-index="0" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="1" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="2" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="3" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="4" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="5" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="6" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="7" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="8" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="9" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="10" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="11" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="12" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="13" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="14" data-block="Верхний парк"></div><div class="slot" data-track="25" data-index="15" data-block="Верхний парк"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;">Путь 26 — <span data-trainname="26" style="color:#1e3a8a">(без названия)</span><button class="btn" data-editname="26">Изменить</button></div>
+        <div class="muted">Свободно: 14 / 14</div>
+        <button class="btn" data-clear="26">Очистить путь</button>
+      </div>
+      <div class="body">
+        <div class="track-line" data-block="Верхний парк" data-track="26"><div class="slot" data-track="26" data-index="0" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="1" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="2" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="3" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="4" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="5" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="6" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="7" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="8" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="9" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="10" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="11" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="12" data-block="Верхний парк"></div><div class="slot" data-track="26" data-index="13" data-block="Верхний парк"></div></div>
+      </div>
+    </div>
+</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals and context menu -->
+  <div id="modalAdd" class="backdrop hidden">
+    <div class="modal" style="width:780px;max-width:96vw;">
+      <div class="content">
+        <div style="font-weight:700;">Добавить поезд</div>
+        <div class="row" style="gap:12px; flex-wrap:wrap; margin-top:8px;">
+          <div><div class="muted">Путь</div><select id="add-track"></select></div>
+          <div><div class="muted">Тип поезда</div><select id="add-type"><option value="single">Одноэтажный</option><option value="double">Двухэтажный</option></select></div>
+          <div style="flex:1;"><div class="muted">Название поезда (подпись пути)</div><input id="add-trainname" placeholder="№1234 ..." /></div>
+          <div style="width:100%;"><div class="muted">Номера вагонов (через запятую)</div><textarea id="add-numbers" placeholder="017-11111, 021-22222"></textarea></div>
+        </div>
+        <div class="row" style="justify-content:flex-end; gap:8px; margin-top:8px;"><button id="add-cancel" class="btn">Отмена</button><button id="add-ok" class="btn">Добавить</button></div>
+      </div>
+    </div>
+  </div>
+  <div id="modalName" class="backdrop hidden">
+    <div class="modal" style="width:520px;max-width:96vw;">
+      <div class="content">
+        <div style="font-weight:700;">Название поезда (подпись пути)</div>
+        <input id="name-input" style="margin-top:8px;" placeholder="№1234 ..." />
+        <div class="row" style="justify-content:flex-end; gap:8px; margin-top:8px;"><button id="name-cancel" class="btn">Отмена</button><button id="name-save" class="btn">Сохранить</button></div>
+      </div>
+    </div>
+  </div>
+  <div id="modalSearch" class="backdrop hidden">
+    <div class="modal" style="width:900px;max-width:96vw;">
+      <div class="content">
+        <div class="row" style="justify-content:space-between;"><div style="font-weight:700;">Результаты поиска</div><div class="row" style="gap:8px;"><button id="search-clear" class="btn">Сбросить</button><button id="search-close" class="btn">Закрыть</button></div></div>
+        <div style="overflow:auto; border:1px solid var(--border); border-radius:12px; margin-top:12px;">
+          <table style="width:100%; border-collapse:collapse; min-width:700px; font-size:14px;">
+            <thead style="background:#f3f4f6;"><tr><th style="text-align:left;padding:8px;">Номер</th><th style="text-align:left;padding:8px;">Блок</th><th style="text-align:left;padding:8px;">Путь</th><th style="text-align:left;padding:8px;">Позиция</th><th style="text-align:left;padding:8px;">Статус</th></tr></thead>
+            <tbody id="search-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="modalAnalytics" class="backdrop hidden"><div class="modal"><div class="content">Пока без графиков. Заполнено: <span id="an-occupancy">0%</span></div></div></div>
+  <div id="modalInventory" class="backdrop hidden"><div class="modal" style="width:1000px;max-width:96vw;"><div class="content"><div style="font-weight:700;display:flex;justify-content:space-between;">Опись парка<button id="inv-close" class="btn">Закрыть</button></div><div class="print-area" style="overflow:auto;margin-top:8px;"><table id="inv-table" style="width:100%;border-collapse:collapse;"><thead><tr><th>Блок</th><th>Путь</th><th>Позиция</th><th>Номер</th><th>Тип</th><th>Статус</th><th>Причина брака</th></tr></thead><tbody id="inv-body"></tbody></table></div></div></div></div>
+
+  <div id="contextMenu" class="ctx hidden">
+    <div class="content">
+      <div class="head-ttl" style="font-weight:700;">Редактировать вагон</div>
+      <div class="mt-8">
+        <label>Номер (формат 017-11111)</label>
+        <input id="ctx-number" />
+      </div>
+      <div class="row" style="gap:12px; margin-top:8px;">
+        <div><div class="muted">Тип</div><select id="ctx-type"><option value="single">Одноэтажный</option><option value="double">Двухэтажный</option></select></div>
+        <div><div class="muted">Статус</div><select id="ctx-status"><option value="normal">Норм</option><option value="reserve">Резерв (зелёный)</option><option value="defect">Брак (красный)</option></select></div>
+      </div>
+      <div id="defect-reason-wrap" class="hidden" style="margin-top:8px;">
+        <div class="muted">Причина брака (обязательно)</div>
+        <textarea id="ctx-defect-reason"></textarea>
+      </div>
+      <div class="row" style="justify-content:space-between; margin-top:8px;">
+        <button id="ctx-delete" class="btn">Удалить</button>
+        <div class="row" style="gap:8px;">
+          <button id="ctx-cancel" class="btn">Отмена</button>
+          <button id="ctx-save" class="btn primary">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const IMG = { single: 'assets/wagon_single.jpg', double: 'assets/wagon_double.jpg' };
+    const STORAGE_KEY = 'yard-tracker-safe2-v1';
+    const ORDER = [
+      ['РЭД', [{id:'61',c:20},{id:'62',c:20},{id:'63',c:20},{id:'64',c:20},{id:'65',c:20},{id:'66',c:20}]],
+      ['Парк ТОР и ЕТР', [{id:'8д',c:4},{id:'9д',c:4}]],
+      ['Линейный парк', [{id:'40',c:20},{id:'41',c:13},{id:'42',c:14},{id:'43',c:20},{id:'44',c:18},{id:'45',c:16},{id:'47',c:14}]],
+      ['Верхний парк', [{id:'23',c:20},{id:'24',c:16},{id:'25',c:16},{id:'26',c:14}]],
+    ];
+    let raw=null; try{ raw=localStorage.getItem(STORAGE_KEY); }catch(e){ raw=null; }
+    let data={cells:{}, meta:{}}; try{ data = raw? JSON.parse(raw) : data; }catch(e){ data={cells:{}, meta:{}}; }
+    let state = data.cells || {};
+    let meta  = data.meta  || {};
+    let dragPayload = null, ctxData=null, nameEditTrackId=null;
+
+    ORDER.forEach(([t,arr])=> arr.forEach(o=>{ if(!state[o.id]) state[o.id]=Array.from({length:o.c},()=>null); if(!meta[o.id]) meta[o.id]={trainName:''}; }));
+    function saveAll(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({cells:state, meta:meta})); }catch(e){} }
+    function two(number){ const d=(number||'').replace(/\D/g,'').padStart(8,'0').slice(-8); return {top:d.slice(0,3), bottom:d.slice(3)}; }
+    function makeW(w){ const card=document.createElement('div'); card.className='wagon '+(w.status==='reserve'?'reserve':w.status==='defect'?'defect':''); card.draggable=true; const n=two(w.number); const num=document.createElement('div'); num.className='num'; num.innerHTML='<div>'+n.top+'</div><div>'+n.bottom+'</div>'; const img=document.createElement('img'); img.src=IMG[w.type]; img.className='img '+(w.type==='single'?'single':'double'); card.appendChild(num); card.appendChild(img); return card; }
+    function hydrate(){ document.querySelectorAll('[data-trainname]').forEach(span=>{ const id=span.getAttribute('data-trainname'); span.textContent=(meta[id]&&meta[id].trainName)?meta[id].trainName:'(без названия)'; }); document.querySelectorAll('.track-line').forEach(line=>{ const id=line.getAttribute('data-track'); const slots=state[id]||[]; const head=line.closest('.panel').querySelector('.head .muted'); if(head) head.textContent='Свободно: '+slots.filter(x=>!x).length+' / '+slots.length; line.querySelectorAll('.slot').forEach(slot=>{ const idx=parseInt(slot.getAttribute('data-index'),10); const cell=slots[idx]; slot.classList.toggle('filled', !!cell); slot.innerHTML=''; slot.ondragover=(e)=>e.preventDefault(); slot.ondrop=onDrop; if(cell){ const w=makeW(cell); w.addEventListener('dragstart', e=>{ dragPayload={trackId:id,index:idx,wagon:cell}; e.dataTransfer.setData('text/plain','drag'); }); w.addEventListener('contextmenu', e=>{ e.preventDefault(); openCtx(e.clientX,e.clientY,{trackId:id,index:idx,wagon:cell}); }); slot.appendChild(w); } }); }); bind(); badges(); saveAll(); }
+    function onDrop(e){ e.preventDefault(); if(!dragPayload) return; const slot=e.currentTarget; const trackId=slot.getAttribute('data-track'); const idx=parseInt(slot.getAttribute('data-index'),10); state[dragPayload.trackId][dragPayload.index]=null; const slots=state[trackId]; let i=idx; while(i<slots.length && slots[i]!==null) i++; if(i<slots.length) slots[i]=dragPayload.wagon; else { i=idx; while(i>=0 && slots[i]!==null) i--; if(i>=0) slots[i]=dragPayload.wagon; } dragPayload=null; saveAll(); hydrate(); }
+    function openCtx(x,y,data){ ctxData=JSON.parse(JSON.stringify(data)); const el=document.getElementById('contextMenu'); el.style.left=Math.min(x,window.innerWidth-380)+'px'; el.style.top=Math.min(y,window.innerHeight-340)+'px'; el.classList.remove('hidden'); document.getElementById('ctx-number').value=data.wagon.number||''; document.getElementById('ctx-type').value=data.wagon.type||'single'; document.getElementById('ctx-status').value=data.wagon.status||'normal'; const wrap=document.getElementById('defect-reason-wrap'); const area=document.getElementById('ctx-defect-reason'); if(data.wagon.status==='defect'){ wrap.classList.remove('hidden'); area.value=data.wagon.defectReason||''; } else { wrap.classList.add('hidden'); area.value=''; } }
+    function closeCtx(){ document.getElementById('contextMenu').classList.add('hidden'); ctxData=null; }
+    document.getElementById('ctx-cancel').onclick=closeCtx;
+    document.getElementById('ctx-status').addEventListener('change', e=>{ document.getElementById('defect-reason-wrap').classList.toggle('hidden', e.target.value!=='defect'); });
+    document.getElementById('ctx-save').onclick=()=>{ if(!ctxData) return; const n=document.getElementById('ctx-number').value.trim(); const t=document.getElementById('ctx-type').value; const s=document.getElementById('ctx-status').value; let reason=document.getElementById('ctx-defect-reason').value.trim(); if(s==='defect'&&!reason){ alert('Укажите причину брака'); return; } const {trackId,index}=ctxData; const old=state[trackId][index]; if(!old){ closeCtx(); return; } state[trackId][index]={...old, number:n, type:t, status:s, defectReason:(s==='defect'?reason:'')}; saveAll(); closeCtx(); hydrate(); };
+    document.getElementById('ctx-delete').onclick=()=>{ if(!ctxData) return; const {trackId,index}=ctxData; state[trackId][index]=null; saveAll(); closeCtx(); hydrate(); };
+
+    // Add
+    document.getElementById('btnAddTrain').onclick=()=>{ showAdd(true); fillAddTracks(); };
+    document.getElementById('add-cancel').onclick=()=> showAdd(false);
+    function showAdd(show){ document.getElementById('modalAdd').classList.toggle('hidden', !show); }
+    function fillAddTracks(){ const sel=document.getElementById('add-track'); sel.innerHTML=''; ORDER.forEach(([title,tracks])=> tracks.forEach(t=>{ const o=document.createElement('option'); o.value=t.id; o.textContent=title+' — путь '+t.id; sel.appendChild(o); })); }
+    document.getElementById('add-ok').onclick=()=>{ const trackId=document.getElementById('add-track').value; const type=document.getElementById('add-type').value; const trainName=(document.getElementById('add-trainname').value||'').trim(); const list=(document.getElementById('add-numbers').value||'').split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean); if(!trackId){ alert('Выберите путь'); return; } if(list.length===0){ alert('Введите номера вагонов'); return; } const slots=state[trackId]; let i=0; for(let k=0;k<slots.length && i<list.length;k++){ if(slots[k]===null) slots[k]={ id: Date.now()+'-'+Math.random(), number:list[i++], type, status:'normal', defectReason:'' }; } if(trainName){ meta[trackId]=meta[trackId]||{}; meta[trackId].trainName=trainName; } saveAll(); showAdd(false); hydrate(); };
+
+    // Bind buttons in each panel
+    function bind(){ document.querySelectorAll('[data-clear]').forEach(btn=> btn.onclick=()=>{ const id=btn.getAttribute('data-clear'); state[id]=state[id].map(()=>null); saveAll(); hydrate(); }); document.querySelectorAll('[data-editname]').forEach(btn=> btn.onclick=()=>{ nameEditTrackId=btn.getAttribute('data-editname'); document.getElementById('name-input').value=(meta[nameEditTrackId]&&meta[nameEditTrackId].trainName)||''; document.getElementById('modalName').classList.remove('hidden'); }); }
+    document.getElementById('name-cancel').onclick=()=> document.getElementById('modalName').classList.add('hidden');
+    document.getElementById('name-save').onclick=()=>{ if(!nameEditTrackId) return; meta[nameEditTrackId]=meta[nameEditTrackId]||{}; meta[nameEditTrackId].trainName=(document.getElementById('name-input').value||'').trim(); saveAll(); document.getElementById('modalName').classList.add('hidden'); hydrate(); };
+
+    // Search & badges (minimal)
+    function normalize(s){ return (s||'').replace(/\D/g,''); }
+    function search(q){ const res=[]; ORDER.forEach(([title,tracks])=> tracks.forEach(t=>{ const slots=state[t.id]||[]; for(let i=0;i<slots.length;i++){ const cell=slots[i]; if(cell && normalize(cell.number).includes(normalize(q))) res.push({ number:cell.number, block:title, track:t.id, index:i+1, status:cell.status, trackId:t.id, slotIndex:i }); } })); return res; }
+    function clearHighlights(){ document.querySelectorAll('.highlight').forEach(el=>el.classList.remove('highlight')); }
+    function jump(trackId, slotIndex){ const el=document.querySelector('.slot[data-track="'+trackId+'"][data-index="'+slotIndex+'"] .wagon'); if(el){ clearHighlights(); el.classList.add('highlight'); el.scrollIntoView({behavior:'smooth',block:'center',inline:'center'}); setTimeout(()=>el.classList.remove('highlight'),1500); } }
+    document.getElementById('searchBtn').onclick=()=>{ const q=document.getElementById('searchInput').value.trim(); if(!q){ alert('Введите номер'); return; } const r=search(q); const body=document.getElementById('search-body'); body.innerHTML=''; r.forEach(x=>{ const tr=document.createElement('tr'); tr.style.cursor='pointer'; tr.innerHTML='<td style="padding:8px;border-bottom:1px solid #e5e7eb">'+x.number+'</td><td style="padding:8px;border-bottom:1px solid #e5e7eb)">'+x.block+'</td><td style="padding:8px;border-bottom:1px solid #e5e7eb)">'+x.track+'</td><td style="padding:8px;border-bottom:1px solid #e5e7eb)">'+x.index+'</td><td style="padding:8px;border-bottom:1px solid #e5e7eb)">'+(x.status==='reserve'?'Резерв':x.status==='defect'?'Брак':'Норм')+'</td>'; tr.onclick=()=>{ document.getElementById('modalSearch').classList.add('hidden'); jump(x.trackId, x.slotIndex); }; body.appendChild(tr); }); document.getElementById('modalSearch').classList.remove('hidden'); };
+
+   function totals(){ 
+  let cap=0, used=0, s=0, d=0, r=0, df=0; 
+  Object.values(state).forEach(slots=>{ 
+    cap+=slots.length; 
+    slots.forEach(w=>{ 
+      if(w){ 
+        used++; 
+        if(w.type==='single') s++; 
+        else d++; 
+        if(w.status==='reserve') r++; 
+        if(w.status==='defect') df++; 
+      } 
+    }); 
+  }); 
+  
+  // Обновляем только основные бейджи, счетчики резерва и брака обновляются через topbar-counters.js
+  document.getElementById('badge-occupancy').textContent='Занято: '+(cap?Math.round(used/cap*100):0)+'%'; 
+  document.getElementById('badge-single').textContent='Одноэтажные: '+s; 
+  document.getElementById('badge-double').textContent='Двухэтажные: '+d; 
+  
+  return {cap,used,s,d,r,df}; 
+}
+    function badges(){ const t=totals(); document.getElementById('badge-occupancy').textContent='Занято: '+(t.cap?Math.round(t.used/t.cap*100):0)+'%'; document.getElementById('badge-single').textContent='Одноэтажные: '+t.s; document.getElementById('badge-double').textContent='Двухэтажные: '+t.d; }
+
+    window.addEventListener('error', ()=>{ document.getElementById('errorbar').classList.add('show'); });
+
+    hydrate();
+  })();
+  </script>
+  <script src="assets/js/park-analytics.js"></script>
+<script src="assets/js/park-analytics-autoinit.js"></script>
+<script src="assets/js/topbar-counters.js"></script>
+<script src="assets/js/central-panel.js"></script>
+
+<!-- === Injected by assistant: Wagon Add via "+" in slot === -->
+<style>
+  
+
+
+
+
+/* === Updated: plus invisible until hover === */
+.slot {
+  position: relative;
+}
+.slot-plus {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  cursor: pointer;
+}
+.slot-plus svg {
+  width: 32px;
+  height: 32px;
+  color: #9ca3af;
+  opacity: 0.15;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.slot-plus:hover {
+  background: rgba(255, 255, 255, 0.05);
+  opacity: 1;
+}
+.slot-plus:hover svg {
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+@media (prefers-color-scheme: light) {
+  .slot-plus:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  .slot-plus svg {
+    color: #6b7280;
+  }
+}
+
+  .slot-plus:hover {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  .slot-plus svg {
+    color: #6b7280;
+  }
+}
+
+  .slot-plus:hover {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  .slot-plus svg {
+    color: #6b7280;
+  }
+}
+
+  .slot-plus:hover {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  .slot-plus svg {
+    color: #6b7280;
+  }
+}
+
+
+  .slot-plus-wrap{ display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
+  /* Simple add modal */
+  .addcar-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; z-index:2000; }
+  .addcar-backdrop.show{ display:flex; }
+  .addcar-modal{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; width:min(520px, 94vw); box-shadow:0 10px 30px rgba(0,0,0,.15); }
+  .addcar-modal .content{ padding:12px; }
+  .addcar-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:520px){ .addcar-row{ grid-template-columns:1fr; } }
+  .addcar-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
+</style>
+<div id="addcar" class="addcar-backdrop">
+  <div class="addcar-modal">
+    <div class="content">
+      <div style="font-weight:700;">Добавить вагон в ячейку <span id="addcar-cell"></span></div>
+      <div class="addcar-row" style="margin-top:8px;">
+        <div><div class="muted">Номер (формат 017-11111)</div><input id="addcar-number" placeholder="017-12345" /></div>
+        <div><div class="muted">Тип</div><select id="addcar-type"><option value="single">Одноэтажный</option><option value="double">Двухэтажный</option></select></div>
+      </div>
+      <div class="addcar-actions">
+        <button id="addcar-cancel" class="btn">Отмена</button>
+        <button id="addcar-save" class="btn primary">Добавить</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  const STORAGE_KEY = 'yard-tracker-safe2-v1';
+  const addUI = {
+    root: document.getElementById('addcar'),
+    cell: document.getElementById('addcar-cell'),
+    number: document.getElementById('addcar-number'),
+    type: document.getElementById('addcar-type'),
+    cancel: document.getElementById('addcar-cancel'),
+    save: document.getElementById('addcar-save'),
+  };
+  let current = null; // {track, index}
+
+  function openAdd(track, index){
+    current = { track, index };
+    addUI.cell.textContent = track + '-' + index;
+    addUI.number.value = '';
+    addUI.type.value = 'single';
+    addUI.root.classList.add('show');
+    setTimeout(()=>addUI.number.focus(), 0);
+  }
+  function closeAdd(){ addUI.root.classList.remove('show'); current=null; }
+
+  addUI.cancel.addEventListener('click', closeAdd);
+  addUI.save.addEventListener('click', ()=>{
+    if(!current) return;
+    const number = (addUI.number.value||'').trim();
+    const type = addUI.type.value;
+    if(!/^[0-9\-\s]{5,}$/.test(number)){ alert('Введите номер (напр. 017-12345)'); return; }
+    // Read storage
+    let data = { cells:{}, meta:{} };
+    try { const raw = localStorage.getItem(STORAGE_KEY); if(raw) data = JSON.parse(raw); } catch(e){}
+    const cells = data.cells || (data.cells = {});
+    const arr = cells[current.track] || (cells[current.track] = []);
+    const idx = parseInt(current.index, 10);
+    // Ensure array length
+    if(arr.length <= idx){ arr.length = idx+1; }
+    // Place wagon
+    arr[idx] = { number, type, status: 'normal' };
+    // Save
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ cells, meta: data.meta || {} })); } catch(e){}
+    closeAdd();
+    // Reload to let existing app re-hydrate from storage
+    location.reload();
+  });
+
+  // Insert plus buttons into empty slots; keep in sync via MutationObserver
+  function decorateSlot(slot){
+    if(slot.classList.contains('filled')) return; // occupied
+    if(slot.querySelector('.wagon')) return;
+    if(slot.querySelector('.slot-plus-wrap')) return;
+    const wrap = document.createElement('div'); wrap.className = 'slot-plus-wrap';
+    const btn = document.createElement('button'); btn.type='button'; btn.className='slot-plus'; btn.title='Добавить вагон';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
+    btn.addEventListener('click', ()=>{
+      const track = slot.getAttribute('data-track');
+      const index = slot.getAttribute('data-index');
+      openAdd(track, index);
+    });
+    wrap.appendChild(btn);
+    slot.appendChild(wrap);
+  }
+  function scanAll(){
+    document.querySelectorAll('.slot').forEach(decorateSlot);
+  }
+  const obs = new MutationObserver((muts)=>{
+    let needScan = false;
+    for(const m of muts){
+      if(m.type === 'childList' || (m.type==='attributes' && m.target.classList && m.target.classList.contains('slot'))){
+        needScan = true; break;
+      }
+    }
+    if(needScan) setTimeout(scanAll, 0);
+  });
+  // Observe containers
+  document.querySelectorAll('.track-line').forEach(line=>{
+    obs.observe(line, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  });
+  // Initial pass
+  window.addEventListener('load', scanAll);
+})();
+</script>
+<!-- === End injected block === -->
+
+
+
+
+
+<!-- WagonInfo external -->
+<script src="wagon-info.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Pre-bind numbers from any .num element to a sensible host container
+    document.querySelectorAll('.num').forEach(function(numEl){
+      var parts = Array.prototype.map.call(numEl.querySelectorAll('div'), x => (x.textContent||'').trim()).filter(Boolean);
+      var num = parts.length >= 2 ? (parts[0] + '-' + parts[1]) : (numEl.textContent||'').trim().replace(/\s+/g,'');
+      var host = numEl.closest('[data-wagon-number], .wagon, .slot, .track-slot, .track-cell') || numEl.parentElement;
+      if (num && host){
+        host.setAttribute('data-wagon-number', num);
+        host.classList.add('wagon');
+      }
+    });
+    WagonInfo.init({ jsonUrl: 'wagons.json', cacheBust: true, debug: false });
+    // safety re-hydrate after small delay (in case of late DOM changes)
+    setTimeout(function(){ WagonInfo.reload && WagonInfo.reload(); }, 300);
+  });
+</script>
+<!-- /WagonInfo external -->
+
+
+<!-- BEGIN Wagon Hover Feature -->
+<link rel="stylesheet" href="wagon_info.css">
+<script src="wagon_info.js"></script>
+<!-- END Wagon Hover Feature -->
+</body>
+</html>
