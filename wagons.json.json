@@ -1,0 +1,502 @@
+{
+  "017-10001": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2019,
+    "type": "двухэтажный вагон"
+  },
+  "017-10002": {
+    "level": "одноэтажный",
+    "echtk": "нет",
+    "ukv": "да",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2015,
+    "type": "одноэтажный вагон"
+  },
+  "017-10003": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2020,
+    "type": "двухэтажный вагон"
+  },
+  "017-10004": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Б",
+    "build_year": 2018,
+    "type": "двухэтажный вагон"
+  },
+  "017-10005": {
+    "level": "одноэтажный",
+    "echtk": "нет",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2014,
+    "type": "одноэтажный вагон"
+  },
+  "017-10006": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2021,
+    "type": "двухэтажный вагон"
+  },
+  "017-10007": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2016,
+    "type": "одноэтажный вагон"
+  },
+  "017-10008": {
+    "level": "двухэтажный",
+    "echtk": "нет",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2019,
+    "type": "двухэтажный вагон"
+  },
+  "017-10009": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2017,
+    "type": "одноэтажный вагон"
+  },
+  "017-10010": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Б",
+    "build_year": 2020,
+    "type": "двухэтажный вагон"
+  },
+  "021-20001": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2018,
+    "type": "одноэтажный вагон"
+  },
+  "021-20002": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Б",
+    "build_year": 2017,
+    "type": "двухэтажный вагон"
+  },
+  "021-20003": {
+    "level": "одноэтажный",
+    "echtk": "нет",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2012,
+    "type": "одноэтажный вагон"
+  },
+  "021-20004": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2023,
+    "type": "двухэтажный вагон"
+  },
+  "021-20005": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2019,
+    "type": "одноэтажный вагон"
+  },
+  "021-20006": {
+    "level": "двухэтажный",
+    "echtk": "нет",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2021,
+    "type": "двухэтажный вагон"
+  },
+  "021-20007": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2020,
+    "type": "одноэтажный вагон"
+  },
+  "021-20008": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Б",
+    "build_year": 2018,
+    "type": "двухэтажный вагон"
+  },
+  "021-20009": {
+    "level": "одноэтажный",
+    "echtk": "нет",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2015,
+    "type": "одноэтажный вагон"
+  },
+  "021-20010": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2022,
+    "type": "двухэтажный вагон"
+  },
+  "025-30001": {
+    "level": "одноэтажный",
+    "echtk": "нет",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2014,
+    "type": "одноэтажный вагон"
+  },
+  "025-30002": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2020,
+    "type": "двухэтажный вагон"
+  },
+  "025-30003": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2016,
+    "type": "одноэтажный вагон"
+  },
+  "025-30004": {
+    "level": "двухэтажный",
+    "echtk": "нет",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2018,
+    "type": "двухэтажный вагон"
+  },
+  "025-30005": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2021,
+    "type": "одноэтажный вагон"
+  },
+  "025-30006": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Б",
+    "build_year": 2017,
+    "type": "двухэтажный вагон"
+  },
+  "025-30007": {
+    "level": "одноэтажный",
+    "echtk": "нет",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2013,
+    "type": "одноэтажный вагон"
+  },
+  "025-30008": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2022,
+    "type": "двухэтажный вагон"
+  },
+  "025-30009": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2019,
+    "type": "одноэтажный вагон"
+  },
+  "025-30010": {
+    "level": "двухэтажный",
+    "echtk": "нет",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2020,
+    "type": "двухэтажный вагон"
+  },
+  "030-40001": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2018,
+    "type": "одноэтажный вагон"
+  },
+  "030-40002": {
+    "level": "двухэтажный",
+    "echtk": "нет",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2021,
+    "type": "двухэтажный вагон"
+  },
+  "030-40003": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2020,
+    "type": "одноэтажный вагон"
+  },
+  "030-40004": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Б",
+    "build_year": 2019,
+    "type": "двухэтажный вагон"
+  },
+  "030-40005": {
+    "level": "одноэтажный",
+    "echtk": "нет",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2014,
+    "type": "одноэтажный вагон"
+  },
+  "030-40006": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2022,
+    "type": "двухэтажный вагон"
+  },
+  "030-40007": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2017,
+    "type": "одноэтажный вагон"
+  },
+  "030-40008": {
+    "level": "двухэтажный",
+    "echtk": "нет",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2020,
+    "type": "двухэтажный вагон"
+  },
+  "030-40009": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2021,
+    "type": "одноэтажный вагон"
+  },
+  "030-40010": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Б",
+    "build_year": 2018,
+    "type": "двухэтажный вагон"
+  },
+  "035-50001": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2023,
+    "type": "одноэтажный вагон"
+  },
+  "035-50002": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Б",
+    "build_year": 2019,
+    "type": "двухэтажный вагон"
+  },
+  "035-50003": {
+    "level": "одноэтажный",
+    "echtk": "нет",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2015,
+    "type": "одноэтажный вагон"
+  },
+  "035-50004": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2020,
+    "type": "двухэтажный вагон"
+  },
+  "035-50005": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2017,
+    "type": "одноэтажный вагон"
+  },
+  "035-50006": {
+    "level": "двухэтажный",
+    "echtk": "нет",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2018,
+    "type": "двухэтажный вагон"
+  },
+  "035-50007": {
+    "level": "одноэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2021,
+    "type": "одноэтажный вагон"
+  },
+  "035-50008": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "нет",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Б",
+    "build_year": 2020,
+    "type": "двухэтажный вагон"
+  },
+  "035-50009": {
+    "level": "одноэтажный",
+    "echtk": "нет",
+    "ukv": "нет",
+    "places": 36,
+    "coupler": "БСУ",
+    "transition": "Б",
+    "build_year": 2016,
+    "type": "одноэтажный вагон"
+  },
+  "035-50010": {
+    "level": "двухэтажный",
+    "echtk": "да",
+    "ukv": "да",
+    "places": 64,
+    "coupler": "СА-3",
+    "transition": "Х",
+    "build_year": 2022,
+    "type": "двухэтажный вагон"
+  }
+}
