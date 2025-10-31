@@ -1,9 +1,0 @@
-/* Базовые стили демо-сайта */
-* { box-sizing: border-box; }
-body { font: 16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin: 0; color: #0f172a; background: #f8fafc; }
-.site-header { padding: 20px; background: #0ea5e9; color: white; }
-.container { padding: 24px; max-width: 980px; margin: 0 auto; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-.wagon-tile { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; }
-.wagon-tile h3 { margin: 0 0 8px 0; font-size: 16px; }
-.footer { padding: 16px; text-align: center; color: #64748b; }
