@@ -2,7 +2,7 @@
 (function(global){
   const WagonUI = {};
   const _state = {
-    dataUrl: '/data/wagons_2000.json',
+    dataUrl: '/223/data/wagons_2000.json',
     youngYear: 2018,
     cellSelector: '.wagon, [data-number]',
     typeToAsset: {
@@ -25,8 +25,10 @@
 
   function normalizeNumber(numberStr) {
     if (!numberStr) return '';
-    // Удаляем все нецифровые символы
-    return numberStr.replace(/\D/g, '');
+    // Удаляем все нецифровые символы и ведущие нули
+    const digits = numberStr.replace(/\D/g, '');
+    // Убираем ведущие нули для сопоставления с числовыми значениями в JSON
+    return digits.replace(/^0+/, '');
   }
 
   async function loadData(){
@@ -36,8 +38,13 @@
       if (!resp.ok) throw new Error('Не удалось загрузить базу вагонов: '+_state.dataUrl);
       const data = await resp.json();
       data.forEach(r => {
+        // Сохраняем как по ID, так и по номеру (в виде строки)
         db.byId.set(String(r.id), r);
         db.byNumber.set(String(r.number), r);
+        
+        // Дополнительно сохраняем с ведущими нулями для поиска
+        const paddedNumber = String(r.number).padStart(8, '0');
+        db.byNumber.set(paddedNumber, r);
       });
       db.loaded = true;
       log('DB loaded:', db.byNumber.size, 'records');
@@ -168,11 +175,11 @@
     }
     
     if (key.type === 'number') {
-      // Нормализуем номер перед поиском
+      // Нормализуем номер перед поиском - убираем все нецифровые символы и ведущие нули
       searchValue = normalizeNumber(key.value);
       console.log('Searching for normalized number:', searchValue);
       
-      // Прямой поиск
+      // Прямой поиск по нормализованному номеру
       const directMatch = db.byNumber.get(searchValue);
       if (directMatch) {
         console.log('Direct match found:', directMatch);
@@ -181,8 +188,9 @@
       
       // Поиск по частичному совпадению (если нужно)
       for (let [storedNumber, record] of db.byNumber) {
-        if (storedNumber.includes(searchValue) || searchValue.includes(storedNumber)) {
-          console.log('Partial match found:', record);
+        const normalizedStored = normalizeNumber(storedNumber);
+        if (normalizedStored === searchValue) {
+          console.log('Match after normalization:', record);
           return record;
         }
       }
