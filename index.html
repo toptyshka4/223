@@ -108,6 +108,34 @@
 }
 </style>
 <link rel="stylesheet" href="./wagon.module.css">
+  <style>
+  /* === Размеры ячеек и картинок (переопределяем переменные) === */
+  :root{
+    /* размер ячейки под вагон */
+    --slot-w: 180px;      /* было 108px */
+    --slot-h: 120px;      /* было 86px  */
+
+    /* разные высоты для типов вагонов */
+    --img-single: 80px;   /* было 30px  — одноэтажный */
+    --img-double: 96px;   /* было 41px  — двухэтажный */
+  }
+
+  /* На всякий случай зафиксируем поведение img внутри карточки */
+  .wagon img {
+    width: auto;                                 /* ширина по содержимому */
+    max-width: calc(var(--slot-w) - 12px);       /* не вылезать за ячейку */
+    object-fit: contain;                          /* вписываться без обрезки */
+    display: block;
+    margin: 0 auto;
+  }
+
+  /* Размер самой карточки (если нужно чуть больше поля) */
+  .wagon{
+    width: var(--slot-w);
+    height: var(--slot-h);
+  }
+</style>
+
 </head>
 <body>
 <div id="central-panel" style="max-width:1200px;margin:12px auto;"></div>
