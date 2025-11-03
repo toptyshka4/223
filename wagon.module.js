@@ -2,7 +2,7 @@
 (function(global){
   const WagonUI = {};
   const _state = {
-    dataUrl: '/223/data/wagons_2000.json',
+    dataUrl: '/data/wagons_2000.json',
     youngYear: 2018,
     cellSelector: '.wagon, [data-number]',
     typeToAsset: {
