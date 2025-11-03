@@ -25,6 +25,7 @@
       _cfg = { ...DEFAULTS, ...config };
       _db = await loadDb(_cfg.jsonUrl, _cfg.cacheBust);
       hydrateAll();
+      
       if (!_cfg.hydrateOnce && typeof MutationObserver !== "undefined") {
         _observer = new MutationObserver(onDomChanged);
         _observer.observe(document.documentElement || document.body, {
@@ -34,26 +35,33 @@
       }
       return api;
     },
+
     get(number) {
       if (!_db) return null;
       const key = normalize(number);
       return _db[key] || null;
     },
+
     async reload() {
       _db = await loadDb(_cfg.jsonUrl, _cfg.cacheBust);
       hydrateAll();
       return api;
     },
+
     setRenderer(fn) {
       _cfg.render = typeof fn === "function" ? fn : defaultRender;
       hydrateAll();
       return api;
     },
+
     disconnect() {
       if (_observer) _observer.disconnect();
       _observer = null;
     },
-    _debug() { return { _db, _cfg, observing: !!_observer }; }
+
+    _debug() { 
+      return { _db, _cfg, observing: !!_observer }; 
+    }
   };
 
   async function loadDb(url, cacheBust) {
@@ -63,11 +71,15 @@
     if (!res.ok) throw new Error(`Не удалось загрузить справочник вагонов: ${res.status}`);
     const json = await res.json();
     const db = {};
-    Object.keys(json || {}).forEach(k => { db[normalize(k)] = json[k]; });
+    Object.keys(json || {}).forEach(k => { 
+      db[normalize(k)] = json[k]; 
+    });
     return db;
   }
 
-  function normalize(n) { return String(n || "").trim().replace(/\s+/g, ""); }
+  function normalize(n) { 
+    return String(n || "").trim().replace(/\s+/g, "").replace(/^0+/, '');
+  }
 
   function onDomChanged(mutations) {
     for (const m of mutations) {
@@ -110,13 +122,18 @@
       <div class="wagon-card__inner">
         <div class="wagon-card__header">
           <span class="wagon-card__number">№ ${escapeHtml(number)}</span>
-          <span class="wagon-card__type">${escapeHtml(data.type || "—")}</span>
+          <span class="wagon-card__type">${escapeHtml(data['Тип вагона'] || "—")}</span>
         </div>
         <dl class="wagon-card__props">
-          <div><dt>Мест:</dt><dd>${numOrDash(data.places)}</dd></div>
-          <div><dt>Автосцепка:</dt><dd>${escapeHtml(data.coupler || "—")}</dd></div>
-          <div><dt>УКВ:</dt><dd>${yn(data.ukv)}</dd></div>
-          <div><dt>ЭЧТК:</dt><dd>${yn(data.echtk)}</dd></div>
+          <div><dt>Мест:</dt><dd>${numOrDash(data['Кол-во мест'])}</dd></div>
+          <div><dt>ЭЧТК:</dt><dd>${yn(data['ЭЧТК'])}</dd></div>
+          <div><dt>УКВ:</dt><dd>${yn(data['УКВ'])}</dd></div>
+          <div><dt>Переход р/с:</dt><dd>${escapeHtml(data['Переход р/с'] || "—")}</dd></div>
+          <div><dt>Переход н/с:</dt><dd>${escapeHtml(data['Переход н/с'] || "—")}</dd></div>
+          <div><dt>Сцепка р/с:</dt><dd>${escapeHtml(data['Сцепка р/с'] || "—")}</dd></div>
+          <div><dt>Сцепка н/с:</dt><dd>${escapeHtml(data['Сцепка н/с'] || "—")}</dd></div>
+          <div><dt>Постройка:</dt><dd>${numOrDash(data['Постройка'])}</dd></div>
+          <div><dt>Модель:</dt><dd>${escapeHtml(data['Модель вагона'] || "—")}</dd></div>
         </dl>
       </div>`;
     injectBaseStyles();
@@ -130,7 +147,7 @@
           <span class="wagon-card__number">№ ${escapeHtml(number)}</span>
           <span class="wagon-card__type">Не найдено</span>
         </div>
-        <p class="wagon-card__hint">Добавьте этот номер в wagons.json на сервере, затем вызовите WagonInfo.reload()</p>
+        <p class="wagon-card__hint">Добавьте этот номер в базу данных</p>
       </div>`;
     injectBaseStyles();
   }
@@ -143,7 +160,7 @@
   function yn(v) {
     const s = String(v || "").toLowerCase();
     if (["да", "yes", "true", "1"].includes(s)) return "да";
-    if (["нет", "no", "false", "0"].includes(s)) return "нет";
+    if (["нет", "no", "false", "0", "нет данных"].includes(s)) return "нет";
     return "—";
   }
 
@@ -157,15 +174,56 @@
     if (_stylesInjected) return;
     _stylesInjected = true;
     const css = `
-      .wagon-card{border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.04);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto}
-      .wagon-card--missing{background:#fff7f7;border-color:#ffd6d6}
-      .wagon-card__header{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;font-weight:600}
-      .wagon-card__number{opacity:.8}
-      .wagon-card__type{padding:2px 8px;border-radius:999px;background:#f3f4f6;font-weight:600}
-      .wagon-card__props{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-      .wagon-card__props dt{color:#6b7280}
-      .wagon-card__props dd{margin:0}
-      [data-wagon-missing="true"]{outline:2px dashed #fca5a5}
+      .wagon-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 12px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0,0,0,.04);
+        font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto;
+        max-width: 320px;
+      }
+      .wagon-card--missing {
+        background: #fff7f7;
+        border-color: #ffd6d6;
+      }
+      .wagon-card__header {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+      .wagon-card__number {
+        opacity: .8;
+      }
+      .wagon-card__type {
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #f3f4f6;
+        font-weight: 600;
+        font-size: 12px;
+      }
+      .wagon-card__props {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .wagon-card__props div {
+        display: contents;
+      }
+      .wagon-card__props dt {
+        color: #6b7280;
+        font-size: 12px;
+      }
+      .wagon-card__props dd {
+        margin: 0;
+        font-weight: 500;
+        font-size: 12px;
+      }
+      [data-wagon-missing="true"] {
+        outline: 2px dashed #fca5a5;
+      }
     `;
     const style = document.createElement("style");
     style.setAttribute("data-wagon-info-styles", "true");
