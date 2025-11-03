@@ -746,14 +746,14 @@
 <script src="./wagon.module.js"></script>
 <script>
   WagonUI.init({
-    dataUrl: './data/wagons_2000.json',           // путь к БД (обязательно относительный)
-    youngYear: 2018,                              // выделение ★ для новых вагонов
-    cellSelector: '.wagon, [data-number]',         // где искать вагоны
+    dataUrl: '/223/data/wagons_2000.json',  // Абсолютный путь от корня репозитория
+    youngYear: 2018,
+    cellSelector: '.wagon, [data-number]',
     typeToAsset: {
-      'одноэтажный': './assets/wagon_single.jpg', 
+      'одноэтажный': './assets/wagon_single.jpg',
       'двухэтажный': './assets/wagon_double.jpg'
     },
-    debug: false
+    debug: true  // Включите для отладки
   });
 </script>
 </body>
