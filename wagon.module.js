@@ -2,14 +2,14 @@
 (function(global){
   const WagonUI = {};
   const _state = {
-    dataUrl: './data/wagons_2000.json',
+    dataUrl: '/223/data/wagons_2000.json',
     youngYear: 2018,
-    cellSelector: '[data-number],[data-wagon-id]',
+    cellSelector: '.wagon, [data-number]',
     typeToAsset: {
-      'одноэтажный': './assets/wagon_single.jpg',
-      'двухэтажный': './assets/wagon_double.jpg'
+      'одноэтажный': '/223/assets/wagon_single.jpg',
+      'двухэтажный': '/223/assets/wagon_double.jpg'
     },
-    debug: false
+    debug: true
   };
 
   const db = {
@@ -25,15 +25,19 @@
 
   async function loadData(){
     if (db.loaded) return;
-    const resp = await fetch(_state.dataUrl, { cache: 'no-store' });
-    if (!resp.ok) throw new Error('Не удалось загрузить базу вагонов: '+_state.dataUrl);
-    const data = await resp.json();
-    data.forEach(r => {
-      db.byId.set(String(r.id), r);
-      db.byNumber.set(String(r.number), r);
-    });
-    db.loaded = true;
-    log('DB loaded:', db.byNumber.size, 'records');
+    try {
+      const resp = await fetch(_state.dataUrl, { cache: 'no-store' });
+      if (!resp.ok) throw new Error('Не удалось загрузить базу вагонов: '+_state.dataUrl);
+      const data = await resp.json();
+      data.forEach(r => {
+        db.byId.set(String(r.id), r);
+        db.byNumber.set(String(r.number), r);
+      });
+      db.loaded = true;
+      log('DB loaded:', db.byNumber.size, 'records');
+    } catch (error) {
+      console.error('Ошибка загрузки данных:', error);
+    }
   }
 
   function ensureTooltip(){
@@ -94,12 +98,29 @@
   }
 
   function getKeyFromEl(el){
+    // Сначала проверяем явные атрибуты
     const id = el.getAttribute('data-wagon-id');
     const num = el.getAttribute('data-number');
     if (id) return { type: 'id', value: String(id) };
     if (num) return { type: 'number', value: String(num) };
 
-    // Try text extraction: 8 digits or 3-5 digits + dash + 5 digits
+    // Пытаемся извлечь номер из текста с классом .num
+    const numEl = el.querySelector('.num');
+    if (numEl) {
+      const txt = numEl.textContent || '';
+      // Ищем формат "00112599" или "001-12599"
+      const m = txt.match(/(\d{3})\s*(\d{5})/);
+      if (m) {
+        const normalized = m[1] + m[2]; // объединяем 3+5 цифр
+        return { type: 'number', value: normalized };
+      }
+      
+      // Альтернативный поиск 8 цифр подряд
+      const m2 = txt.match(/\b\d{8}\b/);
+      if (m2) return { type: 'number', value: m2[0] };
+    }
+
+    // Пытаемся извлечь из текста всего элемента
     const txt = el.textContent || '';
     const m = txt.match(/\b\d{8}\b|\b\d{3,5}-\d{5}\b/);
     if (m){
@@ -107,12 +128,13 @@
       if (normalized.length === 8) return { type: 'number', value: normalized };
     }
 
-    // Try from <img src="...12345678.png">
+    // Пытаемся из src изображения
     const img = el.querySelector('img');
     if (img && img.src){
       const m2 = img.src.match(/(\d{8})(?:\.\w+)?$/);
       if (m2) return { type: 'number', value: m2[1] };
     }
+    
     return null;
   }
 
@@ -197,9 +219,14 @@
     if (initialized.has(root)) return;
     initialized.add(root);
     
+    console.log('Enhancing element:', root); // Для отладки
+    
     root.classList.add('wagon-root');
     const key = getKeyFromEl(root);
+    console.log('Extracted key:', key); // Для отладки
+    
     const rec = getRecByKey(key);
+    console.log('Found record:', rec); // Для отладки
     
     if (!rec){
       markMissing(root, key);
@@ -221,7 +248,9 @@
   }
 
   function scan(){
-    document.querySelectorAll(_state.cellSelector).forEach(enhance);
+    const elements = document.querySelectorAll(_state.cellSelector);
+    console.log('Found elements:', elements.length); // Для отладки
+    elements.forEach(enhance);
   }
 
   function observe(){
