@@ -107,39 +107,19 @@
   border-bottom: none;
 }
 <style>
-  /* Размер ячеек под запас (чуть больше самих картинок) */
-  .wagon, [data-number] {
-    width: 240px;
-    height: 150px;
-    padding: 6px;
-    text-align: center;
-    vertical-align: middle;
-  }
-
-  /* Сбрасываем возможные глобальные ограничения */
-  .wagon img, [data-number] img {
-    max-width: none !important;
-    max-height: none !important;
-    width: auto;  /* базовое значение; конкретику зададим ниже */
-    height: auto;
-    display: block;
-    margin: 0 auto;
-    image-rendering: auto;
-  }
-
-  /* --- Одноэтажный --- */
+    /* --- Одноэтажный --- */
   .wagon img[src*="wagon_single.jpg"],
   [data-number] img[src*="wagon_single.jpg"] {
-    width: 200px !important;   /* ↑ увеличивай здесь при необходимости */
-    height: 100px !important;
+    width: 120px !important;   /* ↑ увеличивай здесь при необходимости */
+    height: 30px !important;
     object-fit: contain;
   }
 
   /* --- Двухэтажный --- */
   .wagon img[src*="wagon_double.jpg"],
   [data-number] img[src*="wagon_double.jpg"] {
-    width: 220px !important;
-    height: 120px !important;
+    width: 120px !important;
+    height: 41px !important;
     object-fit: contain;
   }
 </style>
