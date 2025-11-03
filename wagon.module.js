@@ -6,7 +6,7 @@
     youngYear: 2018,
     cellSelector: '[data-number],[data-wagon-id]',
     typeToAsset: {
-      'одноэтажный': './assets/wagon_single.jpg', 
+      'одноэтажный': './assets/wagon_single.jpg',
       'двухэтажный': './assets/wagon_double.jpg'
     },
     debug: false
@@ -46,12 +46,22 @@
 
   function buildHTML(rec){
     const rows=[
-      ['Тип вагона',rec['Тип вагона']],['Кол-во мест',rec['Кол-во мест']],['ЭЧТК',rec['ЭЧТК']],['УКВ',rec['УКВ']],
-      ['Переход р/с',rec['Переход р/с']],['Переход н/с',rec['Переход н/с']],['Сцепка р/с',rec['Сцепка р/с']],['Переход н/с',rec['Переход н/с']],
-      ['Постройка',rec['Постройка']],['Модель вагона',rec['Модель вагона']]
+      ['Тип вагона', rec['Тип вагона']],
+      ['Кол-во мест', rec['Кол-во мест']],
+      ['ЭЧТК', rec['ЭЧТК']],
+      ['УКВ', rec['УКВ']],
+      ['Переход р/с', rec['Переход р/с']],
+      ['Переход н/с', rec['Переход н/с']],
+      ['Сцепка р/с', rec['Сцепка р/с']],
+      ['Сцепка н/с', rec['Сцепка н/с']],
+      ['Постройка', rec['Постройка']],
+      ['Модель вагона', rec['Модель вагона']]
     ];
+           
     let html=`<div class="title">Вагон №${rec.number}</div>`;
-    for(const [k,v] of rows){ html+=`<div class="row"><div class="k">${k}</div><div class="v">${v}</div></div>`; }
+    for(const [k,v] of rows){ 
+      html+=`<div class="row"><div class="k">${k}</div><div class="v">${v||'—'}</div></div>`; 
+    }
     return html;
   }
 
@@ -90,7 +100,7 @@
       if (normalized.length===8) return { type:'number', value:normalized };
     }
 
-    // Try from <img src="...12345678.jpg">
+    // Try from <img src="...12345678.png">
     const img = el.querySelector('img');
     if (img && img.src){
       const m2 = img.src.match(/(\d{8})(?:\.\w+)?$/);
@@ -113,7 +123,8 @@
   function applyBadges(root, rec){
     clearBadges(root);
     const isYoung = Number(rec['Постройка']) >= _state.youngYear;
-    const hasH = String(rec['Переход']).toUpperCase()==='Х';
+    const hasH = String(rec['Переход р/с']).toUpperCase() === 'HUBNER' || 
+                 String(rec['Переход н/с']).toUpperCase() === 'HUBNER';
     if (isYoung){
       const s=document.createElement('div'); s.className='wagon-badge star'; s.textContent='★'; root.appendChild(s);
     }
@@ -125,8 +136,9 @@
   function setIconByType(root, rec){
     const img = root.querySelector('img');
     if (!img) return;
-    const type = String(rec['Тип']).toLowerCase();
-    const src = _state.typeToAsset[type];
+    // Используем поле "Модель вагона" вместо "Тип"
+    const modelType = String(rec['Модель вагона']).toLowerCase();
+    const src = _state.typeToAsset[modelType];
     if (src) img.setAttribute('src', src);
   }
 
@@ -149,7 +161,7 @@
       });
       document.body.appendChild(d);
     }
-    d.innerHTML = msg + '<div style="opacity:.75;margin-top:6px">Добавьте запись в <code>'+_state.dataUrl+'</code> (обязательно «Тип»).</div>';
+    d.innerHTML = msg + '<div style="opacity:.75;margin-top:6px">Добавьте запись в <code>'+_state.dataUrl+'</code> (обязательно «Модель вагона»).</div>';
     d.style.display='block';
     clearTimeout(d._t); d._t = setTimeout(()=>{ d.style.display='none'; }, 4500);
   }
