@@ -107,35 +107,42 @@
   border-bottom: none;
 }
 <style>
-  /* Общие параметры ячеек */
-  .wagon,
-  [data-number] {
+  /* Размер ячеек под запас (чуть больше самих картинок) */
+  .wagon, [data-number] {
+    width: 240px;
+    height: 150px;
+    padding: 6px;
     text-align: center;
     vertical-align: middle;
-    padding: 4px;
   }
 
-  /* ===========================
-     📦 Одноэтажный вагон
-     =========================== */
-  img[src*="wagon_single.jpg"] {
-    width: 120px;     /* ширина картинки */
-    height: 30px;     /* высота картинки */
-    object-fit: contain;
+  /* Сбрасываем возможные глобальные ограничения */
+  .wagon img, [data-number] img {
+    max-width: none !important;
+    max-height: none !important;
+    width: auto;  /* базовое значение; конкретику зададим ниже */
+    height: auto;
     display: block;
     margin: 0 auto;
+    image-rendering: auto;
   }
 
-  /* ===========================
-     🧱 Двухэтажный вагон
-     =========================== */
-  img[src*="wagon_double.jpg"] {
-    width: 120px;     /* ширина картинки */
-    height: 41px;     /* высота картинки */
+  /* --- Одноэтажный --- */
+  .wagon img[src*="wagon_single.jpg"],
+  [data-number] img[src*="wagon_single.jpg"] {
+    width: 200px !important;   /* ↑ увеличивай здесь при необходимости */
+    height: 100px !important;
     object-fit: contain;
-    display: block;
-    margin: 0 auto;
   }
+
+  /* --- Двухэтажный --- */
+  .wagon img[src*="wagon_double.jpg"],
+  [data-number] img[src*="wagon_double.jpg"] {
+    width: 220px !important;
+    height: 120px !important;
+    object-fit: contain;
+  }
+</style>
 
 </head>
 <body>
