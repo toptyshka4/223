@@ -23,6 +23,12 @@
 
   function log(){ if(_state.debug) console.log.apply(console, arguments); }
 
+  function normalizeNumber(numberStr) {
+    if (!numberStr) return '';
+    // Удаляем все нецифровые символы
+    return numberStr.replace(/\D/g, '');
+  }
+
   async function loadData(){
     if (db.loaded) return;
     try {
@@ -107,41 +113,81 @@
     // Пытаемся извлечь номер из текста с классом .num
     const numEl = el.querySelector('.num');
     if (numEl) {
-      const txt = numEl.textContent || '';
-      // Ищем формат "00112599" или "001-12599"
-      const m = txt.match(/(\d{3})\s*(\d{5})/);
-      if (m) {
-        const normalized = m[1] + m[2]; // объединяем 3+5 цифр
-        return { type: 'number', value: normalized };
+      const divs = numEl.querySelectorAll('div');
+      if (divs.length >= 2) {
+        // Формат "001" и "12599" -> объединяем в "00112599"
+        const part1 = (divs[0].textContent || '').trim();
+        const part2 = (divs[1].textContent || '').trim();
+        if (part1 && part2) {
+          const normalized = part1 + part2;
+          console.log('Extracted number from .num divs:', normalized);
+          return { type: 'number', value: normalized };
+        }
       }
       
-      // Альтернативный поиск 8 цифр подряд
-      const m2 = txt.match(/\b\d{8}\b/);
-      if (m2) return { type: 'number', value: m2[0] };
+      // Альтернативный подход: извлекаем весь текст и убираем пробелы
+      const fullText = numEl.textContent || '';
+      const normalized = fullText.replace(/\s+/g, '');
+      if (normalized.length >= 8) {
+        console.log('Extracted number from .num text:', normalized);
+        return { type: 'number', value: normalized };
+      }
     }
 
     // Пытаемся извлечь из текста всего элемента
     const txt = el.textContent || '';
-    const m = txt.match(/\b\d{8}\b|\b\d{3,5}-\d{5}\b/);
+    // Ищем формат "001-12599" или "001 12599"
+    const m = txt.match(/(\d{3})[-\s]*(\d{5})/);
     if (m){
-      const normalized = m[0].replace(/\D+/g,'');
-      if (normalized.length === 8) return { type: 'number', value: normalized };
+      const normalized = m[1] + m[2];
+      console.log('Extracted number from element text:', normalized);
+      return { type: 'number', value: normalized };
     }
 
     // Пытаемся из src изображения
     const img = el.querySelector('img');
     if (img && img.src){
       const m2 = img.src.match(/(\d{8})(?:\.\w+)?$/);
-      if (m2) return { type: 'number', value: m2[1] };
+      if (m2) {
+        console.log('Extracted number from image src:', m2[1]);
+        return { type: 'number', value: m2[1] };
+      }
     }
     
+    console.log('No number found for element:', el);
     return null;
   }
 
   function getRecByKey(key){
     if (!key) return null;
-    if (key.type === 'id') return db.byId.get(key.value) || null;
-    if (key.type === 'number') return db.byNumber.get(key.value) || null;
+    
+    let searchValue;
+    if (key.type === 'id') {
+      searchValue = key.value;
+      return db.byId.get(searchValue) || null;
+    }
+    
+    if (key.type === 'number') {
+      // Нормализуем номер перед поиском
+      searchValue = normalizeNumber(key.value);
+      console.log('Searching for normalized number:', searchValue);
+      
+      // Прямой поиск
+      const directMatch = db.byNumber.get(searchValue);
+      if (directMatch) {
+        console.log('Direct match found:', directMatch);
+        return directMatch;
+      }
+      
+      // Поиск по частичному совпадению (если нужно)
+      for (let [storedNumber, record] of db.byNumber) {
+        if (storedNumber.includes(searchValue) || searchValue.includes(storedNumber)) {
+          console.log('Partial match found:', record);
+          return record;
+        }
+      }
+    }
+    
     return null;
   }
 
@@ -219,37 +265,43 @@
     if (initialized.has(root)) return;
     initialized.add(root);
     
-    console.log('Enhancing element:', root); // Для отладки
+    console.log('=== Enhancing element ===', root);
     
     root.classList.add('wagon-root');
     const key = getKeyFromEl(root);
-    console.log('Extracted key:', key); // Для отладки
+    console.log('Extracted key:', key);
     
-    const rec = getRecByKey(key);
-    console.log('Found record:', rec); // Для отладки
-    
-    if (!rec){
-      markMissing(root, key);
+    if (key) {
+      const rec = getRecByKey(key);
+      console.log('Found record:', rec);
+      
+      if (!rec){
+        console.log('Record not found for key:', key);
+        markMissing(root, key);
+        root.addEventListener('mouseleave', hideTooltip);
+        return;
+      }
+      
+      applyBadges(root, rec);
+      setIconByType(root, rec);
+      
+      // Add tooltip events
+      root.addEventListener('mouseenter', e => showTooltip(rec, e, root));
+      root.addEventListener('mousemove', e => showTooltip(rec, e, root));
       root.addEventListener('mouseleave', hideTooltip);
-      return;
+      
+      root.setAttribute('tabindex', '0');
+      root.addEventListener('focus', e => showTooltip(rec, e, root));
+      root.addEventListener('blur', hideTooltip);
+    } else {
+      console.log('No key extracted from element');
+      markMissing(root, null);
     }
-    
-    applyBadges(root, rec);
-    setIconByType(root, rec);
-    
-    // Add tooltip events
-    root.addEventListener('mouseenter', e => showTooltip(rec, e, root));
-    root.addEventListener('mousemove', e => showTooltip(rec, e, root));
-    root.addEventListener('mouseleave', hideTooltip);
-    
-    root.setAttribute('tabindex', '0');
-    root.addEventListener('focus', e => showTooltip(rec, e, root));
-    root.addEventListener('blur', hideTooltip);
   }
 
   function scan(){
     const elements = document.querySelectorAll(_state.cellSelector);
-    console.log('Found elements:', elements.length); // Для отладки
+    console.log('Found elements:', elements.length);
     elements.forEach(enhance);
   }
 
