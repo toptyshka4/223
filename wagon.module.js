@@ -6,7 +6,7 @@
     youngYear: 2018,
     cellSelector: '[data-number],[data-wagon-id]',
     typeToAsset: {
-      'одноэтажный': './wagon_single.jpg', 
+      'одноэтажный': './assets/wagon_single.jpg', 
       'двухэтажный': './assets/wagon_double.jpg'
     },
     debug: false
@@ -90,7 +90,7 @@
       if (normalized.length===8) return { type:'number', value:normalized };
     }
 
-    // Try from <img src="...12345678.png">
+    // Try from <img src="...12345678.jpg">
     const img = el.querySelector('img');
     if (img && img.src){
       const m2 = img.src.match(/(\d{8})(?:\.\w+)?$/);
