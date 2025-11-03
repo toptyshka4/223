@@ -108,6 +108,27 @@
 }
 </style>
 <link rel="stylesheet" href="./wagon.module.css">
+  <style>
+  /* Настройка размера изображений вагонов */
+  .wagon img,
+  [data-number] img {
+    width: 120px;     /* ✅ поменяй это число, если хочешь больше/меньше */
+    height: auto;     /* сохраняет пропорции */
+    object-fit: contain;
+    display: block;   /* чтобы не было лишних отступов */
+    margin: 0 auto;   /* выравнивание по центру */
+  }
+
+  /* (Необязательно) Разные размеры для разных типов */
+  img[src*="wagon_single.jpg"] {
+    width: 30px;
+  }
+
+  img[src*="wagon_double.jpg"] {
+    width: 41px;
+  }
+</style>
+
 </head>
 <body>
 <div id="central-panel" style="max-width:1200px;margin:12px auto;"></div>
