@@ -115,7 +115,7 @@
     --slot-w: 180px;      /* было 108px */
     --slot-h: 120px;      /* было 86px  */
 
-    /* разные высоты для типов вагонов */
+    /* разные высоты для Модель вагонов вагонов */
     --img-single: 80px;   /* было 30px  — одноэтажный */
     --img-double: 96px;   /* было 41px  — двухэтажный */
   }
@@ -388,7 +388,7 @@
         <div style="font-weight:700;">Добавить поезд</div>
         <div class="row" style="gap:12px; flex-wrap:wrap; margin-top:8px;">
           <div><div class="muted">Путь</div><select id="add-track"></select></div>
-          <div><div class="muted">Тип поезда</div><select id="add-type"><option value="single">Одноэтажный</option><option value="double">Двухэтажный</option></select></div>
+          <div><div class="muted">Модель вагона поезда</div><select id="add-type"><option value="single">Одноэтажный</option><option value="double">Двухэтажный</option></select></div>
           <div style="flex:1;"><div class="muted">Название поезда (подпись пути)</div><input id="add-trainname" placeholder="№1234 ..." /></div>
           <div style="width:100%;"><div class="muted">Номера вагонов (через запятую)</div><textarea id="add-numbers" placeholder="017-11111, 021-22222"></textarea></div>
         </div>
@@ -419,7 +419,7 @@
     </div>
   </div>
   <div id="modalAnalytics" class="backdrop hidden"><div class="modal"><div class="content">Пока без графиков. Заполнено: <span id="an-occupancy">0%</span></div></div></div>
-  <div id="modalInventory" class="backdrop hidden"><div class="modal" style="width:1000px;max-width:96vw;"><div class="content"><div style="font-weight:700;display:flex;justify-content:space-between;">Опись парка<button id="inv-close" class="btn">Закрыть</button></div><div class="print-area" style="overflow:auto;margin-top:8px;"><table id="inv-table" style="width:100%;border-collapse:collapse;"><thead><tr><th>Блок</th><th>Путь</th><th>Позиция</th><th>Номер</th><th>Тип</th><th>Статус</th><th>Причина брака</th></tr></thead><tbody id="inv-body"></tbody></table></div></div></div></div>
+  <div id="modalInventory" class="backdrop hidden"><div class="modal" style="width:1000px;max-width:96vw;"><div class="content"><div style="font-weight:700;display:flex;justify-content:space-between;">Опись парка<button id="inv-close" class="btn">Закрыть</button></div><div class="print-area" style="overflow:auto;margin-top:8px;"><table id="inv-table" style="width:100%;border-collapse:collapse;"><thead><tr><th>Блок</th><th>Путь</th><th>Позиция</th><th>Номер</th><th>Модель вагона</th><th>Статус</th><th>Причина брака</th></tr></thead><tbody id="inv-body"></tbody></table></div></div></div></div>
 
   <div id="contextMenu" class="ctx hidden">
     <div class="content">
@@ -429,7 +429,7 @@
         <input id="ctx-number" />
       </div>
       <div class="row" style="gap:12px; margin-top:8px;">
-        <div><div class="muted">Тип</div><select id="ctx-type"><option value="single">Одноэтажный</option><option value="double">Двухэтажный</option></select></div>
+        <div><div class="muted">Модель вагона</div><select id="ctx-type"><option value="single">Одноэтажный</option><option value="double">Двухэтажный</option></select></div>
         <div><div class="muted">Статус</div><select id="ctx-status"><option value="normal">Норм</option><option value="reserve">Резерв (зелёный)</option><option value="defect">Брак (красный)</option></select></div>
       </div>
       <div id="defect-reason-wrap" class="hidden" style="margin-top:8px;">
@@ -619,7 +619,7 @@
       <div style="font-weight:700;">Добавить вагон в ячейку <span id="addcar-cell"></span></div>
       <div class="addcar-row" style="margin-top:8px;">
         <div><div class="muted">Номер (формат 017-11111)</div><input id="addcar-number" placeholder="017-12345" /></div>
-        <div><div class="muted">Тип</div><select id="addcar-type"><option value="single">Одноэтажный</option><option value="double">Двухэтажный</option></select></div>
+        <div><div class="muted">Модель вагона</div><select id="addcar-type"><option value="single">Одноэтажный</option><option value="double">Двухэтажный</option></select></div>
       </div>
       <div class="addcar-actions">
         <button id="addcar-cancel" class="btn">Отмена</button>
@@ -746,14 +746,14 @@
 <script src="./wagon.module.js"></script>
 <script>
   WagonUI.init({
-    dataUrl: '/223/data/wagons_2000.json',  // Абсолютный путь от корня репозитория
-    youngYear: 2018,
-    cellSelector: '.wagon, [data-number]',
+    dataUrl: './data/wagons_2000.json',           // путь к БД (обязательно относительный)
+    youngYear: 2018,                              // выделение ★ для новых вагонов
+    cellSelector: '.wagon, [data-number]',         // где искать вагоны
     typeToAsset: {
-      'одноэтажный': './assets/wagon_single.jpg',
+      'одноэтажный': './assets/wagon_single.jpg', 
       'двухэтажный': './assets/wagon_double.jpg'
     },
-    debug: true  // Включите для отладки
+    debug: false
   });
 </script>
 </body>
