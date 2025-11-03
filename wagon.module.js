@@ -6,8 +6,8 @@
     youngYear: 2018,
     cellSelector: '[data-number],[data-wagon-id]',
     typeToAsset: {
-      'одноэтажный': './assets/wagon_one.png',
-      'двухэтажный': './assets/wagon_two.png'
+      'одноэтажный': './wagon_single.jpg', 
+      'двухэтажный': './assets/wagon_double.jpg'
     },
     debug: false
   };
