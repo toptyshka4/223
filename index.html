@@ -106,24 +106,8 @@
 .cp-list div:last-child {
   border-bottom: none;
 }
-<style>
-    /* --- Одноэтажный --- */
-  .wagon img[src*="wagon_single.jpg"],
-  [data-number] img[src*="wagon_single.jpg"] {
-    width: 120px !important;   /* ↑ увеличивай здесь при необходимости */
-    height: 30px !important;
-    object-fit: contain;
-  }
-
-  /* --- Двухэтажный --- */
-  .wagon img[src*="wagon_double.jpg"],
-  [data-number] img[src*="wagon_double.jpg"] {
-    width: 120px !important;
-    height: 41px !important;
-    object-fit: contain;
-  }
 </style>
-
+<link rel="stylesheet" href="./wagon.module.css">
 </head>
 <body>
 <div id="central-panel" style="max-width:1200px;margin:12px auto;"></div>
