@@ -13,22 +13,24 @@
   };
 
   const db = {
-    byNumber: new Map(), // ключ: НОРМАЛИЗОВАННЫЙ номер '########'
+    byNumber: new Map(), // ключ: нормализованный номер '########'
     byId: new Map(),
     loaded: false
   };
 
   let tooltipEl = null;
+  let ctxMenuEl = null;
+  let editorEl = null;
+  let currentEditRoot = null;
   const initialized = new WeakSet();
 
   function log(){ if(_state.debug) console.log.apply(console, arguments); }
 
-  // === ВАЖНО: нормализация номера ===
-  // Всегда возвращаем строку ровно из 8 цифр, сохраняя ведущие нули.
+  // --- НОРМАЛИЗАЦИЯ НОМЕРА: всегда строка из 8 цифр (с ведущими нулями) ---
   function normalizeWagonNumber(input) {
     const digits = String(input ?? '').replace(/\D/g, '');
-    const last8 = digits.slice(-8);        // на случай формата '###-#####' или длинных строк
-    return last8.padStart(8, '0');         // дополняем нулями слева
+    const last8 = digits.slice(-8);
+    return last8.padStart(8, '0');
   }
 
   async function loadData(){
@@ -39,18 +41,9 @@
       const data = await resp.json();
 
       data.forEach(r => {
-        // Индексация по ID (как есть)
-        if (r.id !== undefined && r.id !== null) {
-          db.byId.set(String(r.id), r);
-        }
-
-        // Индексация по номеру: нормализуем в '########'
-        // Поддержим возможные варианты поля в JSON: number / Номер
+        if (r.id !== undefined && r.id !== null) db.byId.set(String(r.id), r);
         const rawNum = (r.number !== undefined ? r.number : r['Номер']);
-        if (rawNum !== undefined) {
-          const key = normalizeWagonNumber(rawNum);
-          db.byNumber.set(key, r);
-        }
+        if (rawNum !== undefined) db.byNumber.set(normalizeWagonNumber(rawNum), r);
       });
 
       db.loaded = true;
@@ -81,8 +74,6 @@
       ['Постройка', rec['Постройка']],
       ['Модель вагона', rec['Модель вагона']]
     ];
-           
-    // Пытаемся показать номер из rec.number или rec['Номер']
     const shownNumber = normalizeWagonNumber(rec.number ?? rec['Номер'] ?? '');
     let html = `<div class="title">Вагон №${shownNumber}</div>`;
     for(const [k,v] of rows){ 
@@ -176,12 +167,10 @@
 
   function getRecByKey(key){
     if (!key) return null;
-    
     if (key.type === 'id') {
       const searchId = String(key.value);
       return db.byId.get(searchId) || null;
     }
-    
     if (key.type === 'number') {
       const searchValue = normalizeWagonNumber(key.value);
       log('Searching for normalized number:', searchValue);
@@ -221,12 +210,11 @@
   function setIconByType(root, rec){
     const img = root.querySelector('img');
     if (!img) return;
-    // Используем поле "Модель вагона" (при необходимости можно заменить на "Тип вагона")
     const modelType = String(rec['Модель вагона'] || '').toLowerCase();
     const src = _state.typeToAsset[modelType];
-    if (src) {
-      img.setAttribute('src', src);
-    }
+    if (src) img.setAttribute('src', src);
+    // По умолчанию оставляем «рабочую сторону налево» (никаких трансформаций)
+    if (!root.dataset.wagonFlipped) applyFlipToRoot(root, false);
   }
 
   function markMissing(root, key){
@@ -259,18 +247,216 @@
     d.innerHTML = msg + '<div style="opacity:.75;margin-top:6px">Добавьте запись в <code>' + _state.dataUrl + '</code> (обязательно «Модель вагона»).</div>';
     d.style.display = 'block';
     clearTimeout(d._t); 
-    d._t = setTimeout(() => { 
-      d.style.display = 'none'; 
-    }, 4500);
+    d._t = setTimeout(() => { d.style.display = 'none'; }, 4500);
   }
 
+  // =========================== КОНТЕКСТНОЕ МЕНЮ ===========================
+  function ensureContextMenu(){
+    if (ctxMenuEl) return;
+    ctxMenuEl = document.createElement('div');
+    ctxMenuEl.className = 'wagon-ctxmenu';
+    Object.assign(ctxMenuEl.style, {
+      position: 'fixed',
+      left: '0', top: '0',
+      display: 'none',
+      background: '#1f1f1f',
+      color: '#fff',
+      borderRadius: '10px',
+      boxShadow: '0 10px 20px rgba(0,0,0,.3)',
+      minWidth: '200px',
+      overflow: 'hidden',
+      zIndex: 10001,
+      font: '14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial',
+      userSelect: 'none'
+    });
+    ctxMenuEl.innerHTML = `
+      <button data-action="edit" style="display:block;width:100%;text-align:left;padding:10px 12px;background:none;border:0;color:#fff;cursor:pointer">Редактировать вагон</button>
+    `;
+    document.body.appendChild(ctxMenuEl);
+
+    // скрытие меню
+    document.addEventListener('click', ()=> ctxMenuEl.style.display = 'none');
+    window.addEventListener('blur', ()=> ctxMenuEl.style.display = 'none');
+    window.addEventListener('resize', ()=> ctxMenuEl.style.display = 'none');
+  }
+
+  function openContextMenu(evt, root){
+    ensureContextMenu();
+    evt.preventDefault();
+    currentEditRoot = root;
+    ctxMenuEl.style.display = 'block';
+    const rect = ctxMenuEl.getBoundingClientRect();
+    let x = evt.clientX, y = evt.clientY;
+    if (x + rect.width > window.innerWidth) x = window.innerWidth - rect.width - 8;
+    if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 8;
+    ctxMenuEl.style.left = x + 'px';
+    ctxMenuEl.style.top = y + 'px';
+
+    const editBtn = ctxMenuEl.querySelector('[data-action="edit"]');
+    editBtn.onclick = () => {
+      ctxMenuEl.style.display = 'none';
+      openEditor(currentEditRoot);
+    };
+  }
+
+  // ============================== РЕДАКТОР ===============================
+  function ensureEditor(){
+    if (editorEl) return;
+
+    editorEl = document.createElement('div');
+    editorEl.className = 'wagon-editor';
+    Object.assign(editorEl.style, {
+      position: 'fixed',
+      left: '0', top: '0', right: '0', bottom: '0',
+      background: 'rgba(0,0,0,.5)',
+      display: 'none',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10002
+    });
+
+    const panel = document.createElement('div');
+    Object.assign(panel.style, {
+      width: 'min(560px, 92vw)',
+      background: '#fff',
+      borderRadius: '16px',
+      boxShadow: '0 20px 40px rgba(0,0,0,.35)',
+      padding: '16px'
+    });
+
+    panel.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px">
+        <div style="font:600 16px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial">Редактировать вагон</div>
+        <button data-close style="border:0;background:#eee;border-radius:10px;padding:8px 10px;cursor:pointer">×</button>
+      </div>
+      <div data-preview style="display:flex;align-items:center;justify-content:center;padding:12px;border:1px solid #eee;border-radius:12px;min-height:140px;overflow:hidden">
+        <div style="opacity:.6">Превью изображения</div>
+      </div>
+      <div style="margin-top:12px;display:grid;gap:10px">
+        <label style="display:grid;gap:6px">
+          <span style="font-size:13px;color:#333">Пароль для переворота (введите <code>0000</code>):</span>
+          <input type="password" data-pass placeholder="0000" style="padding:8px 10px;border:1px solid #ccc;border-radius:10px;font:14px system-ui,-apple-system,Segoe UI,Roboto,Arial">
+          <div data-pass-hint style="font-size:12px;color:#888">Ползунок будет доступен после правильного пароля</div>
+        </label>
+        <label style="display:grid;gap:6px">
+          <span style="font-size:13px;color:#333">Перевернуть по горизонтали</span>
+          <input type="range" data-flip min="0" max="100" value="0" disabled>
+          <div data-flip-state style="font-size:12px;color:#666">0 — обычно (рабочая сторона налево)</div>
+        </label>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+          <button data-reset style="border:0;background:#f2f2f2;border-radius:10px;padding:8px 12px;cursor:pointer">Сброс</button>
+          <button data-apply style="border:0;background:#111;color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer">Применить</button>
+        </div>
+      </div>
+    `;
+
+    editorEl.appendChild(panel);
+    document.body.appendChild(editorEl);
+
+    editorEl.querySelector('[data-close]').onclick = () => editorEl.style.display = 'none';
+
+    // Логика пароля
+    const passInput = editorEl.querySelector('[data-pass]');
+    const passHint  = editorEl.querySelector('[data-pass-hint]');
+    const flipRange = editorEl.querySelector('[data-flip]');
+    const flipState = editorEl.querySelector('[data-flip-state]');
+
+    passInput.addEventListener('input', () => {
+      const ok = passInput.value === '0000';
+      flipRange.disabled = !ok;
+      passHint.textContent = ok ? 'Пароль верный — можно менять ползунок' : 'Ползунок будет доступен после правильного пароля';
+      passHint.style.color = ok ? '#0a7' : '#888';
+    });
+
+    // Превью и применение scaleX
+    flipRange.addEventListener('input', () => {
+      const v = Number(flipRange.value);
+      const flipped = v >= 50; // 0..49 — нормально, 50..100 — зеркально
+      updatePreviewTransform(flipped);
+      flipState.textContent = flipped ? '100 — зеркально (рабочая сторона направо)' : '0 — обычно (рабочая сторона налево)';
+    });
+
+    editorEl.querySelector('[data-reset]').onclick = () => {
+      passInput.value = '';
+      flipRange.value = 0;
+      flipRange.disabled = true;
+      passHint.textContent = 'Ползунок будет доступен после правильного пароля';
+      passHint.style.color = '#888';
+      updatePreviewTransform(false);
+      flipState.textContent = '0 — обычно (рабочая сторона налево)';
+    };
+
+    editorEl.querySelector('[data-apply]').onclick = () => {
+      if (!currentEditRoot) { editorEl.style.display = 'none'; return; }
+      const v = Number(flipRange.value);
+      const flipped = v >= 50;
+      applyFlipToRoot(currentEditRoot, flipped);
+      editorEl.style.display = 'none';
+    };
+  }
+
+  function updatePreviewTransform(flipped){
+    const prev = editorEl.querySelector('[data-preview]');
+    const img = prev.querySelector('img');
+    if (img) img.style.transform = flipped ? 'scaleX(-1)' : 'none';
+  }
+
+  function openEditor(root){
+    ensureEditor();
+    editorEl.style.display = 'flex';
+
+    // Вставляем превью текущей картинки
+    const prev = editorEl.querySelector('[data-preview]');
+    prev.innerHTML = '';
+    const img = (root && root.querySelector('img')) ? root.querySelector('img').cloneNode(true) : null;
+    if (img) {
+      Object.assign(img.style, { maxWidth: '100%', maxHeight: '220px', display: 'block' });
+      prev.appendChild(img);
+    } else {
+      prev.innerHTML = '<div style="opacity:.6">Картинка не найдена</div>';
+    }
+
+    // Синхронизируем ползунок с текущим состоянием вагона
+    const flipRange = editorEl.querySelector('[data-flip]');
+    const flipState = editorEl.querySelector('[data-flip-state]');
+    const passInput = editorEl.querySelector('[data-pass]');
+    const passHint  = editorEl.querySelector('[data-pass-hint]');
+
+    const isFlipped = !!(root && root.dataset.wagonFlipped === '1');
+    flipRange.value = isFlipped ? 100 : 0;
+    updatePreviewTransform(isFlipped);
+    flipState.textContent = isFlipped ? '100 — зеркально (рабочая сторона направо)' : '0 — обычно (рабочая сторона налево)';
+
+    // При открытии ползунок заблокирован, пока не введут пароль заново
+    passInput.value = '';
+    flipRange.disabled = true;
+    passHint.textContent = 'Ползунок будет доступен после правильного пароля';
+    passHint.style.color = '#888';
+  }
+
+  function applyFlipToRoot(root, flipped){
+    // Сохраняем состояние на корневом элементе
+    root.dataset.wagonFlipped = flipped ? '1' : '0';
+
+    // Находим img внутри вагона и применяем трансформацию
+    const img = root.querySelector('img');
+    if (img) {
+      img.style.transformOrigin = 'center';
+      img.style.transform = flipped ? 'scaleX(-1)' : 'none';
+    }
+  }
+
+  // ============================ ОСНОВНОЙ ФЛОУ ============================
   function enhance(root){
     if (initialized.has(root)) return;
     initialized.add(root);
     
     log('=== Enhancing element ===', root);
-    
     root.classList.add('wagon-root');
+
+    // контекстное меню на правый клик
+    root.addEventListener('contextmenu', (e) => openContextMenu(e, root));
+
     const key = getKeyFromEl(root);
     log('Extracted key:', key);
     
@@ -321,11 +507,16 @@
     mo.observe(document.documentElement, { childList: true, subtree: true });
   }
 
+  function ensureScaffolding(){
+    ensureContextMenu();
+  }
+
   WagonUI.init = async function init(options){
     Object.assign(_state, options || {});
     await loadData();
     scan();
     observe();
+    ensureScaffolding();
     log('WagonUI initialized with', _state);
   };
 
